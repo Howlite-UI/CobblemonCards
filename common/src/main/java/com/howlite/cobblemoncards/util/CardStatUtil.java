@@ -31,7 +31,7 @@ public class CardStatUtil {
      * vanilla {@link DataComponents#CONTAINER} component for saves that predate the migration.
      */
     public static Iterable<ItemStack> getBinderContents(ItemStack binderStack) {
-        if (binderStack == null || binderStack.isEmpty()) {
+        if (binderStack == null) {
             return Collections.emptyList();
         }
         List<ItemStack> binderItems = binderStack.get(ModDataComponents.BINDER_CONTENTS);

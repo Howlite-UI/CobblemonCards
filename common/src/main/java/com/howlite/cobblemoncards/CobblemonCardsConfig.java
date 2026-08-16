@@ -52,6 +52,9 @@ public class CobblemonCardsConfig extends MidnightConfig {
     @Entry
     public static boolean displayPercentStatOnCards = true;
 
+    @Entry
+    public static boolean doesMasterBinderProvideStats = false;
+
     // --- Binder Config Options ---
 
     @Entry
