@@ -41,7 +41,7 @@ public class ModCreativeTabs {
                                 randomPokemon,
                                 RANDOM.nextBoolean(),
                                 RARITIES[RANDOM.nextInt(RARITIES.length)],
-                                CardStat.values()[RANDOM.nextInt(CardStat.values().length)],
+                                com.howlite.cobblemoncards.util.CardStatUtil.randomStat(RANDOM),
                                 (RANDOM.nextFloat() * 2.0f) - 1.0f, // Valeur entre -1.0 et 1.0
                                 RANDOM.nextInt(11), // Grade entre 0 et 10
                                 Optional.empty(),

@@ -13,10 +13,16 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 
+import com.howlite.cobblemoncards.item.custom.BinderItem;
+import com.howlite.cobblemoncards.item.custom.BinderTier;
+import com.howlite.cobblemoncards.item.custom.MasterAlbumItem;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.function.Predicate;
 
 public class CardStatUtil {
@@ -31,7 +37,7 @@ public class CardStatUtil {
      * vanilla {@link DataComponents#CONTAINER} component for saves that predate the migration.
      */
     public static Iterable<ItemStack> getBinderContents(ItemStack binderStack) {
-        if (binderStack == null || binderStack.isEmpty()) {
+        if (binderStack == null) {
             return Collections.emptyList();
         }
         List<ItemStack> binderItems = binderStack.get(ModDataComponents.BINDER_CONTENTS);
@@ -71,6 +77,52 @@ public class CardStatUtil {
             }
             out.merge(cardData.stat(), cardData.statValue(), Float::sum);
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Equipped binder scanning
+    // ------------------------------------------------------------------
+
+    /** Accessory slot ids that count as "wearing a binder". */
+    private static boolean isBinderSlot(String slotId) {
+        return slotId.equals("binder") || slotId.equals("legs/binder");
+    }
+
+    /**
+     * Sums the raw stat values held in the binder(s) the player currently has equipped.
+     * Single source of truth for "what is this player wearing", shared by the spawn influence and the
+     * trainer-stat event handlers.
+     *
+     * <p>{@link MasterAlbumItem} extends {@link BinderItem}, so albums are included only when
+     *
+     * @param filter optional stat filter, e.g. {@code CobblemonCardsConfig::isSpawnBoostStat}
+     */
+    public static Map<CardStat, Float> collectEquippedStats(ServerPlayer player, Predicate<CardStat> filter) {
+        Map<CardStat, Float> totals = new EnumMap<>(CardStat.class);
+        if (player == null) {
+            return totals;
+        }
+        for (EquippedAccessory equipped : PlatformHelper.INSTANCE.getEquippedAccessories(player)) {
+            if (!isBinderSlot(equipped.slotName())) {
+                continue;
+            }
+            if (!(equipped.stack().getItem() instanceof BinderItem binder)) {
+                continue;
+            }
+            collectStats(equipped.stack(), filter, totals);
+        }
+        return totals;
+    }
+
+    /**
+     * Effective bonus for a single stat across the player's equipped binder(s).
+     * The config multiplier is applied exactly once, via {@link #getEffectiveValue(CardStat, float)},
+     * so a disabled stat correctly reads as {@code 0}.
+     */
+    public static float getEquippedBonus(ServerPlayer player, CardStat stat) {
+        if (player == null || stat == null) return 0f;
+        float raw = collectEquippedStats(player, s -> s == stat).getOrDefault(stat, 0f);
+        return getEffectiveValue(stat, raw);
     }
 
     /**
@@ -160,6 +212,117 @@ public class CardStatUtil {
     /** Same as {@link #formatValue(CardStat, float)} but as a {@link Component}. */
     public static MutableComponent formatValueComponent(CardStat stat, float totalStatValue) {
         return Component.literal(formatValue(stat, totalStatValue));
+    }
+
+    // ------------------------------------------------------------------
+    // Card generation: roll pool and trainer-stat gating
+    // ------------------------------------------------------------------
+
+    /**
+     * Stats eligible for a normal card roll: currently enabled in the config, and never a trainer stat.
+     * <p>
+     * Trainer stats (Exp / Catch / Shiny) are excluded by design — they are far stronger than the rest
+     * and are only obtainable by grading a card to {@link CobblemonCardsConfig#trainerStatMinGrade} or
+     * above, or through the small lucky chance on Legendary / Mythic / Shiny cards.
+     * <p>
+     * Filtering on the config here means a disabled stat can never be minted onto a card, which would
+     * otherwise produce a "dead" card showing a permanent +0 bonus.
+     */
+    public static List<CardStat> rollableStats() {
+        List<CardStat> pool = new ArrayList<>();
+        for (CardStat stat : CardStat.values()) {
+            if (CobblemonCardsConfig.isTrainerStat(stat)) {
+                continue;
+            }
+            if (CobblemonCardsConfig.getStatMultiplier(stat) > 0f) {
+                pool.add(stat);
+            }
+        }
+        return pool;
+    }
+
+    /**
+     * Uniform pick from {@link #rollableStats()}. Falls back to {@link CardStat#MOVEMENT_SPEED} when the
+     * pool is empty (i.e. every stat category is disabled) so card generation can never fail outright.
+     */
+    public static CardStat randomStat(Random random) {
+        List<CardStat> pool = rollableStats();
+        if (pool.isEmpty()) {
+            return CardStat.MOVEMENT_SPEED;
+        }
+        return pool.get(random.nextInt(pool.size()));
+    }
+
+    /** Trainer stats that are currently enabled in the config. */
+    private static List<CardStat> enabledTrainerStats() {
+        List<CardStat> pool = new ArrayList<>();
+        for (CardStat stat : CardStat.values()) {
+            if (CobblemonCardsConfig.isTrainerStat(stat) && CobblemonCardsConfig.getStatMultiplier(stat) > 0f) {
+                pool.add(stat);
+            }
+        }
+        return pool;
+    }
+
+    /** Uniform pick from the enabled trainer stats, or {@code null} if none are enabled. */
+    public static CardStat randomTrainerStat(Random random) {
+        List<CardStat> pool = enabledTrainerStats();
+        return pool.isEmpty() ? null : pool.get(random.nextInt(pool.size()));
+    }
+
+    /**
+     * Whether a card qualifies for the small "lucky" trainer-stat chance at generation time.
+     * <p>
+     * Mythic is the tier <em>above</em> legendary, so it is included: excluding it would leave the
+     * rarest cards in the game worse off than legendary ones.
+     */
+    public static boolean isLuckyCard(String rarity, boolean isShiny) {
+        if (isShiny) return true;
+        if (rarity == null) return false;
+        String r = rarity.toLowerCase(java.util.Locale.ROOT);
+        return r.equals("legendary") || r.equals("mythic");
+    }
+
+    /**
+     * Rolls the trainer stat a card earns on reaching {@code newGrade}, or {@code null} to keep the
+     * card's existing stat. Null-safe and self-gating: returns {@code null} when the feature is
+     * disabled, when the grade is below the threshold, or when the chance roll fails, so callers need
+     * no extra guards.
+     */
+    public static CardStat rollTrainerStatForGrade(int newGrade, Random random) {
+        if (!CobblemonCardsConfig.enableTrainerStatGrading
+                || newGrade < CobblemonCardsConfig.trainerStatMinGrade) {
+            return null;
+        }
+        if (random.nextFloat() * 100f >= CobblemonCardsConfig.trainerStatGradeChance) {
+            return null;
+        }
+        return randomTrainerStat(random);
+    }
+
+    /**
+     * Result of the lucky trainer-stat roll: the stat the card should carry and its value.
+     * Returned as a pair so the two generation sites (mob drops and booster packs) stay in sync.
+     */
+    public record RolledStat(CardStat stat, float value) {}
+
+    /**
+     * Applies the small Legendary / Mythic / Shiny chance to grant a trainer stat at a reduced value.
+     * Returns the original stat and value untouched when the card does not qualify or the roll fails.
+     */
+    public static RolledStat applyLuckyTrainerStat(CardStat stat, float value, String rarity,
+                                                  boolean isShiny, Random random) {
+        if (!isLuckyCard(rarity, isShiny)
+                || random.nextFloat() * 100f >= CobblemonCardsConfig.trainerStatLuckyChance) {
+            return new RolledStat(stat, value);
+        }
+        CardStat lucky = randomTrainerStat(random);
+        if (lucky == null) {
+            return new RolledStat(stat, value);
+        }
+        // "A very small amount": a fraction of the normal rarity-based value, so a properly earned
+        // grade 9+ trainer stat is always clearly stronger than a lucky drop.
+        return new RolledStat(lucky, value * CobblemonCardsConfig.trainerStatLuckyValueMultiplier);
     }
 
     public static float getPlayerDropBonus(ServerPlayer player) {

@@ -2,6 +2,7 @@ package com.howlite.cobblemoncards.block.entity;
 
 import com.howlite.cobblemoncards.CobblemonCardsConfig;
 import com.howlite.cobblemoncards.component.CardData;
+import com.howlite.cobblemoncards.component.CardStat;
 import com.howlite.cobblemoncards.component.ModDataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -172,11 +173,22 @@ public class GradingStationBlockEntity extends BlockEntity implements Implemente
                 float bonusMultiplier = newGrade * 0.03f;
                 float newStatValue = oldData.statValue() + (oldData.statValue() * bonusMultiplier);
 
+                // A high grade is the main way to earn a "trainer" stat (Exp / Catch / Shiny).
+                // Cosmetic cards are excluded: they are meant to carry no stats at all.
+                CardStat finalStat = oldData.stat();
+                if (!com.howlite.cobblemoncards.util.CardUtil.isCosmeticCard(oldData.pokemonId())) {
+                    CardStat trainerStat = com.howlite.cobblemoncards.util.CardStatUtil
+                            .rollTrainerStatForGrade(newGrade, RANDOM);
+                    if (trainerStat != null) {
+                        finalStat = trainerStat;
+                    }
+                }
+
                 CardData newData = new CardData(
                         oldData.pokemonId(),
                         oldData.isShiny(),
                         oldData.rarity(),
-                        oldData.stat(),
+                        finalStat,
                         newStatValue,
                         newGrade,
                         oldData.background(),

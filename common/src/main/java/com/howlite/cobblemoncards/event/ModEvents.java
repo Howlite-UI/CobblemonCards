@@ -45,6 +45,68 @@ public class ModEvents {
             }
             return Unit.INSTANCE;
         });
+
+        registerTrainerStatEvents();
+    }
+
+    /**
+     * Hooks the Exp / Catch / Shiny "trainer" stats into Cobblemon.
+     *
+     * <p>Each handler reads the bonus from the player's equipped binder via
+     * {@link CardStatUtil#getEquippedBonus}, which returns {@code 0} when the stat's config toggle is
+     * off — so {@code enableTrainerStats} gates all three without extra checks.</p>
+     *
+     * <p>All three fire on the server thread.</p>
+     */
+    private static void registerTrainerStatEvents() {
+        // --- Exp boost ---
+        // Pre is cancelable, but we only ever adjust the amount and never cancel.
+        CobblemonEvents.EXPERIENCE_GAINED_EVENT_PRE.subscribe(Priority.NORMAL, event -> {
+            ServerPlayer owner = event.getPokemon().getOwnerPlayer();
+            if (owner != null) {
+                float percent = CardStatUtil.getEquippedBonus(owner, CardStat.EXP_BOOST);
+                if (percent > 0f) {
+                    float multiplier = Math.min(CobblemonCardsConfig.maxExpBoostMultiplier,
+                            1.0f + (percent / 100.0f));
+                    // Keep the multiplication in floating point and round at the end. Casting the
+                    // multiplier to an int first would floor a 1.5x boost to 1x, silently doing nothing.
+                    event.setExperience(Math.round(event.getExperience() * multiplier));
+                }
+            }
+            return Unit.INSTANCE;
+        });
+
+        // --- Catch rate boost ---
+        CobblemonEvents.POKEMON_CATCH_RATE.subscribe(Priority.NORMAL, event -> {
+            if (event.getThrower() instanceof ServerPlayer thrower) {
+                float percent = CardStatUtil.getEquippedBonus(thrower, CardStat.CATCH_BOOST);
+                if (percent > 0f) {
+                    float multiplier = Math.min(CobblemonCardsConfig.maxCatchBoostMultiplier,
+                            1.0f + (percent / 100.0f));
+                    event.setCatchRate(event.getCatchRate() * multiplier);
+                }
+            }
+            return Unit.INSTANCE;
+        });
+
+        // --- Shiny chance boost ---
+        // The rate is a "1 in N" value, so boosting it means DIVIDING: a smaller N is more likely.
+        CobblemonEvents.SHINY_CHANCE_CALCULATION.subscribe(Priority.NORMAL, event -> {
+            event.addModificationFunction((currentRate, player, pokemon) -> {
+                if (player == null) {
+                    return currentRate;
+                }
+                float percent = CardStatUtil.getEquippedBonus(player, CardStat.SHINY_CHANCE);
+                if (percent <= 0f) {
+                    return currentRate;
+                }
+                // Clamped to >= 1 so we can never divide by zero, and never make shinies rarer.
+                float divisor = Math.max(1.0f, Math.min(CobblemonCardsConfig.maxShinyBoostDivisor,
+                        1.0f + (percent / 100.0f)));
+                return currentRate / divisor;
+            });
+            return Unit.INSTANCE;
+        });
     }
 
     private static void handlePokemonDrop(ServerPlayer player, Pokemon pokemon) {
@@ -81,8 +143,9 @@ public class ModEvents {
             // Species-aware rarity: catching a legendary leans toward higher-rarity drops
             String rarity = BoosterLootTable.getRandomRarity(pokemon.getSpecies());
             
-            CardStat randomStat = CardStat.values()[RANDOM.nextInt(CardStat.values().length)];
-            
+            // Config-aware pool: never mints a disabled stat, and never a trainer stat.
+            CardStat randomStat = CardStatUtil.randomStat(RANDOM);
+
             // Stat value cohérente avec la rareté (même barème que les Boosters)
             float statValue = switch (rarity) {
                 case "mythic"    -> 0.20f + RANDOM.nextFloat() * 0.05f;
@@ -93,7 +156,14 @@ public class ModEvents {
                 default          -> 0.005f + RANDOM.nextFloat() * 0.005f; // common
             };
             if (isShiny) statValue += 0.03f;
-            
+
+            // Small chance for Legendary / Mythic / Shiny cards to carry a trainer stat instead,
+            // at a reduced value. Otherwise trainer stats are only earned by grading to 9+.
+            CardStatUtil.RolledStat rolled =
+                    CardStatUtil.applyLuckyTrainerStat(randomStat, statValue, rarity, isShiny, RANDOM);
+            randomStat = rolled.stat();
+            statValue = rolled.value();
+
             ItemStack cardStack = new ItemStack(ModItems.CARD);
             CardData cardData = new CardData(
                     pokemonId,

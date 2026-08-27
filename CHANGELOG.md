@@ -31,9 +31,6 @@ All major changes brought to **Cobblemon Cards** in this update.
 * Fixed `ItemStack` instances being shared between a cabinet's container and the `BINDER_CONTENTS` component when broken or placed.
 
 
-### Master Album Config for Disabling Stats
-* **New Config Option**: `doesMasterBinderProvideStats` — Set to `false` to disable stats from master tier binders. Due to their large card capacity.
-
 ---
 
 ## 🚀 Version 1.0.1 (Multiloader & Easter Eggs Update)

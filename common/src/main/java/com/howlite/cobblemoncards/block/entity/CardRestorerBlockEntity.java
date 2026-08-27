@@ -2,6 +2,7 @@ package com.howlite.cobblemoncards.block.entity;
 
 import com.howlite.cobblemoncards.CobblemonCardsConfig;
 import com.howlite.cobblemoncards.component.CardData;
+import com.howlite.cobblemoncards.component.CardStat;
 import com.howlite.cobblemoncards.component.ModDataComponents;
 import com.howlite.cobblemoncards.item.ModItems;
 import com.howlite.cobblemoncards.block.ModBlocks;
@@ -28,6 +29,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 public class CardRestorerBlockEntity extends BlockEntity implements ImplementedInventory, MenuProvider {
+
+    private static final java.util.Random RANDOM = new java.util.Random();
 
     // Slots: 0 = card input, 1-4 = card dust input
     private final NonNullList<ItemStack> inventory = NonNullList.withSize(5, ItemStack.EMPTY);
@@ -217,11 +220,26 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
                 : data.statValue();
         float newStatValue = baseStatValue * (1f + targetBonus);
 
+        // Restoring can lift a card to grade 9+, which is the main way to earn a "trainer" stat.
+        // Without this, a card restored to grade 10 could never obtain one (the Grading Station only
+        // ever runs on grade-0 cards). Gated on newly CROSSING the threshold, so repeatedly restoring
+        // an already-9 card to 10 isn't a cheap re-roll.
+        CardStat finalStat = data.stat();
+        if (currentGrade < CobblemonCardsConfig.trainerStatMinGrade
+                && target >= CobblemonCardsConfig.trainerStatMinGrade
+                && !com.howlite.cobblemoncards.util.CardUtil.isCosmeticCard(data.pokemonId())) {
+            CardStat trainerStat = com.howlite.cobblemoncards.util.CardStatUtil
+                    .rollTrainerStatForGrade(target, RANDOM);
+            if (trainerStat != null) {
+                finalStat = trainerStat;
+            }
+        }
+
         CardData newData = new CardData(
                 data.pokemonId(),
                 data.isShiny(),
                 data.rarity(),
-                data.stat(),
+                finalStat,
                 newStatValue,
                 target,
                 data.background(),

@@ -1,5 +1,6 @@
 package com.howlite.cobblemoncards.item.custom;
 
+import com.howlite.cobblemoncards.CobblemonCardsConfig;
 import com.howlite.cobblemoncards.component.CardStat;
 import com.howlite.cobblemoncards.util.PlatformHelper;
 import net.minecraft.ChatFormatting;
