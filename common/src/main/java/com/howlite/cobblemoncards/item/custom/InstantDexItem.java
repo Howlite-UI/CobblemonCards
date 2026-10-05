@@ -30,6 +30,8 @@ public class InstantDexItem extends Item {
 
     private static final int MAX_SCANS = 5;
 
+    private static final java.util.Random RANDOM = new java.util.Random();
+
     public InstantDexItem(Properties properties) {
         super(properties);
     }
@@ -192,7 +194,7 @@ public class InstantDexItem extends Item {
             species = "missingno";
             isShiny = true;
             rarity = "mythic";
-            stat = CardStat.values()[(int) (Math.random() * CardStat.values().length)];
+            stat = com.howlite.cobblemoncards.util.CardStatUtil.randomStat(RANDOM);
             statValue = 0.666f; // Glitched 66.6% value
             grade = 10; // Perfect Grade 10
             
@@ -274,7 +276,7 @@ public class InstantDexItem extends Item {
                 rarity = "uncommon";
             }
             
-            stat = CardStat.values()[(int) (Math.random() * CardStat.values().length)];
+            stat = com.howlite.cobblemoncards.util.CardStatUtil.randomStat(RANDOM);
             // Stat value cohérente avec la rareté déterminée — toujours positive
             statValue = switch (rarity) {
                 case "mythic"    -> 0.20f + (float) Math.random() * 0.05f; // ×10 → +2.0 à +2.5

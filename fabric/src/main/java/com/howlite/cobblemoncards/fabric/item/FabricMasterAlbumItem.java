@@ -1,5 +1,6 @@
 package com.howlite.cobblemoncards.fabric.item;
 
+import com.howlite.cobblemoncards.CobblemonCardsConfig;
 import com.howlite.cobblemoncards.component.CardStat;
 import com.howlite.cobblemoncards.item.custom.MasterAlbumItem;
 import io.wispforest.accessories.api.Accessory;
@@ -22,6 +23,7 @@ public class FabricMasterAlbumItem extends MasterAlbumItem implements Accessory 
 
     @Override
     public void getDynamicModifiers(ItemStack stack, SlotReference reference, AccessoryAttributeBuilder builder) {
+
         // Shared reader: BINDER_CONTENTS with a fallback to vanilla CONTAINER for unmigrated saves.
         Map<CardStat, Float> statTotals = com.howlite.cobblemoncards.util.CardStatUtil.collectStats(stack);
 

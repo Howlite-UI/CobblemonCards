@@ -245,7 +245,7 @@ public class BoosterLootTable {
         }
 
         // Sélection de la statistique
-        CardStat stat = CardStat.values()[RANDOM.nextInt(CardStat.values().length)];
+        CardStat stat = com.howlite.cobblemoncards.util.CardStatUtil.randomStat(RANDOM);
         float statValue = 0f;
 
         // Probabilités pour Background et Effect
@@ -331,6 +331,12 @@ public class BoosterLootTable {
                 background = Optional.of(com.howlite.cobblemoncards.util.CardUtil.getDefaultBackground(pokemonId));
             }
         }
+
+        com.howlite.cobblemoncards.util.CardStatUtil.RolledStat rolled =
+                com.howlite.cobblemoncards.util.CardStatUtil.applyLuckyTrainerStat(
+                        stat, statValue, rarity, isShiny, RANDOM);
+        stat = rolled.stat();
+        statValue = rolled.value();
 
         ItemStack cardStack = new ItemStack(ModItems.CARD);
         CardData data = new CardData(pokemonId, isShiny, rarity, stat, statValue, 0, background, effect);

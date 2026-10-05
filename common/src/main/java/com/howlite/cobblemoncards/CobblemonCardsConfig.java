@@ -13,6 +13,18 @@ public class CobblemonCardsConfig extends MidnightConfig {
     @Entry
     public static boolean enableSpawnBoostStats = true;
 
+    /** Master toggle for the Exp / Catch / Shiny "trainer" stats. */
+    @Entry
+    public static boolean enableTrainerStats = true;
+
+    /** Single toggle for all 15 egg-group spawn influences. Also requires {@link #enableSpawnBoostStats}. */
+    @Entry
+    public static boolean enableEggGroupStats = false;
+
+    /** Single toggle for all 6 EV-yield spawn influences. Also requires {@link #enableSpawnBoostStats}. */
+    @Entry
+    public static boolean enableEvYieldStats = false;
+
     @Entry(min = 0.0f, max = 100.0f)
     public static float globalStatMultiplier = 10.0f;
 
@@ -22,8 +34,46 @@ public class CobblemonCardsConfig extends MidnightConfig {
     @Entry(min = 0.0f, max = 100.0f)
     public static float spawnBoostStatMultiplier = 1.0f;
 
+    @Entry(min = 0.0f, max = 100.0f)
+    public static float trainerStatMultiplier = 1.0f;
+
     @Entry(min = 0.0f, max = 10000.0f)
     public static float maxSpawnBoostMultiplier = 100.0f;
+
+    // --- Trainer stat safety caps (mirrors the maxSpawnBoostMultiplier idiom) ---
+
+    @Entry(min = 1.0f, max = 100.0f)
+    public static float maxExpBoostMultiplier = 5.0f;
+
+    @Entry(min = 1.0f, max = 100.0f)
+    public static float maxCatchBoostMultiplier = 5.0f;
+
+    /** Shiny rate is "1-in-N", so a boost divides it. This caps the divisor. */
+    @Entry(min = 1.0f, max = 100.0f)
+    public static float maxShinyBoostDivisor = 10.0f;
+
+    // --- How trainer stats are earned ---
+    // Trainer stats never roll on a normal card. They are granted either by grading a card to
+    // trainerStatMinGrade or higher, or by the small lucky chance on Legendary/Mythic/Shiny cards.
+
+    @Entry
+    public static boolean enableTrainerStatGrading = true;
+
+    /** Minimum grade that can earn a trainer stat. */
+    @Entry(min = 1, max = 10)
+    public static int trainerStatMinGrade = 9;
+
+    /** Chance (%) that a card graded at or above {@link #trainerStatMinGrade} converts to a trainer stat. */
+    @Entry(min = 0.0f, max = 100.0f)
+    public static float trainerStatGradeChance = 50.0f;
+
+    /** Chance (%) that a Legendary / Mythic / Shiny card rolls a trainer stat on drop. */
+    @Entry(min = 0.0f, max = 100.0f)
+    public static float trainerStatLuckyChance = 5.0f;
+
+    /** Lucky trainer stats roll at this fraction of the normal rarity-based value. */
+    @Entry(min = 0.0f, max = 1.0f)
+    public static float trainerStatLuckyValueMultiplier = 0.25f;
 
     @Entry(min = 1, max = 1200)
     public static int recyclerProcessTime = 40;
@@ -107,6 +157,18 @@ public class CobblemonCardsConfig extends MidnightConfig {
     @Entry(min = 0.0f, max = 100.0f)
     public static float cardDropChanceStatMultiplier = 1.0f;
 
+    // --- Per-stat multipliers for the trainer stats ---
+    /** Trainer stats are incredibly powerful, so they are damped by default. */
+
+    @Entry(min = 0.0f, max = 100.0f)
+    public static float expBoostStatMultiplier = 0.8f;
+
+    @Entry(min = 0.0f, max = 100.0f)
+    public static float catchBoostStatMultiplier = 0.25f;
+
+    @Entry(min = 0.0f, max = 100.0f)
+    public static float shinyChanceStatMultiplier = 0.1f;
+
     /**
      * When false (default), species whose National Pokédex number is outside [1, 1025]
      * (i.e. Fakemon added by addon mods) are excluded from card drops and booster packs.
@@ -117,14 +179,23 @@ public class CobblemonCardsConfig extends MidnightConfig {
 
 
     public static float getStatMultiplier(CardStat stat) {
-        if (stat == null || !enableCardStats || (!enablePlayerStats && isPlayerStat(stat)) || (!enableSpawnBoostStats && isSpawnStat(stat))) {
+        if (stat == null || !enableCardStats
+                || (!enablePlayerStats && isPlayerStat(stat))
+                || (!enableSpawnBoostStats && isSpawnBoostStat(stat))
+                || (!enableTrainerStats && isTrainerStat(stat))
+                || (!enableEggGroupStats && isEggGroupStat(stat))
+                || (!enableEvYieldStats && isEvYieldStat(stat))) {
             return 0.0f;
         }
 
         if (isPlayerStat(stat)) {
             return globalStatMultiplier * playerStatMultiplier * getPerStatMultiplier(stat);
         }
-        if (isSpawnStat(stat)) {
+        if (isTrainerStat(stat)) {
+            return globalStatMultiplier * trainerStatMultiplier * getPerStatMultiplier(stat);
+        }
+        // Elemental-type, egg-group and EV-yield boosts all feed the same spawn weighting pipeline.
+        if (isSpawnBoostStat(stat)) {
             return globalStatMultiplier * spawnBoostStatMultiplier;
         }
 
@@ -147,6 +218,9 @@ public class CobblemonCardsConfig extends MidnightConfig {
             case ARMOR -> armorStatMultiplier;
             case MAX_HEALTH -> maxHealthStatMultiplier;
             case CARD_DROP_CHANCE -> cardDropChanceStatMultiplier;
+            case EXP_BOOST -> expBoostStatMultiplier;
+            case CATCH_BOOST -> catchBoostStatMultiplier;
+            case SHINY_CHANCE -> shinyChanceStatMultiplier;
             default -> 1.0f;
         };
     }
@@ -158,8 +232,32 @@ public class CobblemonCardsConfig extends MidnightConfig {
                 || stat == CardStat.MAX_HEALTH || stat == CardStat.CARD_DROP_CHANCE;
     }
 
+    /** Elemental-type spawn boosts only (the original {@code *_spawn} stats). */
     public static boolean isSpawnStat(CardStat stat) {
         return stat != null && stat.getSerializedName().endsWith("_spawn");
+    }
+
+    /** The Exp / Catch / Shiny global player boosts. */
+    public static boolean isTrainerStat(CardStat stat) {
+        return stat == CardStat.EXP_BOOST || stat == CardStat.CATCH_BOOST || stat == CardStat.SHINY_CHANCE;
+    }
+
+    /** Egg-group spawn influences ({@code *_egg}). */
+    public static boolean isEggGroupStat(CardStat stat) {
+        return stat != null && stat.getSerializedName().endsWith("_egg");
+    }
+
+    /** EV-yield spawn influences ({@code *_yield}). */
+    public static boolean isEvYieldStat(CardStat stat) {
+        return stat != null && stat.getSerializedName().endsWith("_yield");
+    }
+
+    /**
+     * Any stat that feeds Cobblemon's spawn weighting: elemental type, egg group or EV yield.
+     * All three are gated by {@link #enableSpawnBoostStats} so the master toggle stays meaningful.
+     */
+    public static boolean isSpawnBoostStat(CardStat stat) {
+        return isSpawnStat(stat) || isEggGroupStat(stat) || isEvYieldStat(stat);
     }
 
     public static int getBinderPages(com.howlite.cobblemoncards.item.custom.BinderTier tier, int defaultPages) {
