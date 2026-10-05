@@ -9,7 +9,23 @@ import net.minecraft.network.codec.StreamCodec;
 import java.util.Optional;
 
 // Ce Record est la "carte d'identité" de notre item
-public record CardData(String pokemonId, boolean isShiny, String rarity, CardStat stat, float statValue, int grade, Optional<String> background, Optional<String> effect) {
+public record CardData(
+        String pokemonId,
+        boolean isShiny,
+        String rarity,
+        CardStat stat,
+        float statValue,
+        int grade,
+        Optional<String> background,
+        Optional<String> effect,
+        Optional<CardStat> trainerStat,
+        Optional<Float> trainerStatValue
+) {
+
+    // Constructeur rétrocompatible pour les cartes sans stat trainer
+    public CardData(String pokemonId, boolean isShiny, String rarity, CardStat stat, float statValue, int grade, Optional<String> background, Optional<String> effect) {
+        this(pokemonId, isShiny, rarity, stat, statValue, grade, background, effect, Optional.empty(), Optional.empty());
+    }
 
     // Ce CODEC est le traducteur qui permet à Minecraft de sauvegarder
     // ces infos dans le monde ou de les envoyer par réseau !
@@ -21,7 +37,9 @@ public record CardData(String pokemonId, boolean isShiny, String rarity, CardSta
             Codec.FLOAT.fieldOf("stat_value").forGetter(CardData::statValue),
             Codec.INT.fieldOf("grade").forGetter(CardData::grade),
             Codec.STRING.optionalFieldOf("background").forGetter(CardData::background),
-            Codec.STRING.optionalFieldOf("effect").forGetter(CardData::effect)
+            Codec.STRING.optionalFieldOf("effect").forGetter(CardData::effect),
+            CardStat.CODEC.optionalFieldOf("trainer_stat").forGetter(CardData::trainerStat),
+            Codec.FLOAT.optionalFieldOf("trainer_stat_value").forGetter(CardData::trainerStatValue)
     ).apply(instance, CardData::new));
 
     // Le traducteur pour envoyer la carte du Serveur vers l'Écran (le Client)
@@ -35,6 +53,8 @@ public record CardData(String pokemonId, boolean isShiny, String rarity, CardSta
                 ByteBufCodecs.VAR_INT.encode(buf, data.grade());
                 ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8).encode(buf, data.background());
                 ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8).encode(buf, data.effect());
+                ByteBufCodecs.optional(ByteBufCodecs.fromCodec(CardStat.CODEC)).encode(buf, data.trainerStat());
+                ByteBufCodecs.optional(ByteBufCodecs.FLOAT).encode(buf, data.trainerStatValue());
             },
             buf -> new CardData(
                     ByteBufCodecs.STRING_UTF8.decode(buf),
@@ -44,7 +64,9 @@ public record CardData(String pokemonId, boolean isShiny, String rarity, CardSta
                     ByteBufCodecs.FLOAT.decode(buf),
                     ByteBufCodecs.VAR_INT.decode(buf),
                     ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8).decode(buf),
-                    ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8).decode(buf)
+                    ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8).decode(buf),
+                    ByteBufCodecs.optional(ByteBufCodecs.fromCodec(CardStat.CODEC)).decode(buf),
+                    ByteBufCodecs.optional(ByteBufCodecs.FLOAT).decode(buf)
             )
     );
 

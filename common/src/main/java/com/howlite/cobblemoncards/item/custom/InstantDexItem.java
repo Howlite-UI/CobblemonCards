@@ -195,7 +195,7 @@ public class InstantDexItem extends Item {
             isShiny = true;
             rarity = "mythic";
             stat = com.howlite.cobblemoncards.util.CardStatUtil.randomStat(RANDOM);
-            statValue = 0.666f; // Glitched 66.6% value
+            statValue = 6.66f; // Glitched 66.6% value
             grade = 10; // Perfect Grade 10
             
             // Play a scary glitch sound at a lower pitch to reward the player!
@@ -279,15 +279,15 @@ public class InstantDexItem extends Item {
             stat = com.howlite.cobblemoncards.util.CardStatUtil.randomStat(RANDOM);
             // Stat value cohérente avec la rareté déterminée — toujours positive
             statValue = switch (rarity) {
-                case "mythic"    -> 0.20f + (float) Math.random() * 0.05f; // ×10 → +2.0 à +2.5
-                case "legendary" -> 0.12f + (float) Math.random() * 0.06f; // ×10 → +1.2 à +1.8
-                case "epic"      -> 0.08f + (float) Math.random() * 0.04f; // ×10 → +0.8 à +1.2
-                case "rare"      -> 0.04f + (float) Math.random() * 0.03f; // ×10 → +0.4 à +0.7
-                case "uncommon"  -> 0.015f + (float) Math.random() * 0.015f; // ×10 → +0.15 à +0.3
-                default          -> 0.005f + (float) Math.random() * 0.005f; // ×10 → +0.05 à +0.10
+                case "mythic"    -> 2.00f + (float) Math.random() * 0.50f; // ×10 → +20.0 à +25.0
+                case "legendary" -> 1.20f + (float) Math.random() * 0.60f; // ×10 → +12.0 à +18.0
+                case "epic"      -> 0.80f + (float) Math.random() * 0.40f; // ×10 → +8.0 à +12.0
+                case "rare"      -> 0.40f + (float) Math.random() * 0.30f; // ×10 → +4.0 à +7.0
+                case "uncommon"  -> 0.15f + (float) Math.random() * 0.15f; // ×10 → +1.5 à +3.0
+                default          -> 0.05f + (float) Math.random() * 0.05f; // ×10 → +0.5 à +1.0
             };
             // Bonus shiny
-            if (isShiny) statValue += 0.03f;
+            if (isShiny) statValue += 0.30f;
             grade = 0;
         }
 

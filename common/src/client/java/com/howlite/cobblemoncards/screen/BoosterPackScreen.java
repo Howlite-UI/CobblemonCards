@@ -508,10 +508,18 @@ public class BoosterPackScreen extends Screen {
                 graphics.drawCenteredString(this.font, stack.getHoverName().getString(), xCenter, (int)(currentCardY + 70), nameColor);
 
                 // Dessiner le bonus si data présent
-                if (data != null) {
+                if (data != null && data.stat() != null) {
                     String percent = com.howlite.cobblemoncards.util.CardStatUtil.formatValue(data.stat(), data.statValue());
                     Component bonusText = Component.literal(percent + " ").append(data.stat().getTranslatedName()).withStyle(ChatFormatting.GREEN);
                     graphics.drawCenteredString(this.font, bonusText, xCenter, (int)(currentCardY + 82), statColor);
+
+                    if (data.trainerStat() != null && data.trainerStat().isPresent()
+                            && data.trainerStatValue() != null && data.trainerStatValue().isPresent()) {
+                        String tPercent = com.howlite.cobblemoncards.util.CardStatUtil.formatValue(data.trainerStat().get(), data.trainerStatValue().get());
+                        Component tBonusText = Component.literal("★ " + tPercent + " ").append(data.trainerStat().get().getTranslatedName()).withStyle(ChatFormatting.GOLD);
+                        int tStatColor = (alpha << 24) | (0xFFAA00 & 0xFFFFFF);
+                        graphics.drawCenteredString(this.font, tBonusText, xCenter, (int)(currentCardY + 94), tStatColor);
+                    }
                 }
             }
         }

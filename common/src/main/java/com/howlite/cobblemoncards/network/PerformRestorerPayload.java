@@ -6,7 +6,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Payload C2S : le client demande au serveur d'effectuer la restauration de grade.
+ * Payload C2S : le client demande au serveur de démarrer la restauration de grade.
  */
 public record PerformRestorerPayload() implements CustomPacketPayload {
     public static final Type<PerformRestorerPayload> ID = new Type<>(

@@ -42,7 +42,7 @@ public class ModCreativeTabs {
                                 RANDOM.nextBoolean(),
                                 RARITIES[RANDOM.nextInt(RARITIES.length)],
                                 com.howlite.cobblemoncards.util.CardStatUtil.randomStat(RANDOM),
-                                (RANDOM.nextFloat() * 2.0f) - 1.0f, // Valeur entre -1.0 et 1.0
+                                0.10f + RANDOM.nextFloat() * 1.50f, // Valeur entre 0.10 et 1.60
                                 RANDOM.nextInt(11), // Grade entre 0 et 10
                                 Optional.empty(),
                                 Optional.empty()

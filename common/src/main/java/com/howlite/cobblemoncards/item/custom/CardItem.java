@@ -1,6 +1,7 @@
 package com.howlite.cobblemoncards.item.custom;
 
 import com.howlite.cobblemoncards.component.CardData;
+import com.howlite.cobblemoncards.component.CardStat;
 import com.howlite.cobblemoncards.component.ModDataComponents;
 import com.howlite.cobblemoncards.network.InspectCardPayload;
 import com.howlite.cobblemoncards.util.ClientAccess;
@@ -93,6 +94,22 @@ public class CardItem extends Item {
                             .append(data.stat().getTranslatedName()
                                 .copy().withStyle(Style.EMPTY.withColor(rarityColor).withBold(false)))
                     );
+
+                    // Bonus secondaire de dresseur (si présent)
+                    if (data.trainerStat() != null && data.trainerStat().isPresent()
+                            && data.trainerStatValue() != null && data.trainerStatValue().isPresent()) {
+                        CardStat tStat = data.trainerStat().get();
+                        float tVal = data.trainerStatValue().get();
+                        String formattedTValue = com.howlite.cobblemoncards.CobblemonCardsConfig.displayPercentStatOnCards
+                                ? com.howlite.cobblemoncards.util.CardStatUtil.formatValue(tStat, tVal)
+                                : String.valueOf(tVal);
+                        tooltipComponents.add(
+                            Component.literal("  ★ " + formattedTValue + " ")
+                                .withStyle(Style.EMPTY.withColor(ChatFormatting.GOLD).withBold(true))
+                                .append(tStat.getTranslatedName()
+                                    .copy().withStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW).withBold(false)))
+                        );
+                    }
                 }
 
                 tooltipComponents.add(Component.empty());

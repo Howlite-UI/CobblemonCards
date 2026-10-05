@@ -35,20 +35,24 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
     // Slots: 0 = card input, 1-4 = card dust input
     private final NonNullList<ItemStack> inventory = NonNullList.withSize(5, ItemStack.EMPTY);
 
-    // Grade cible sélectionné par le joueur (stocké côté serveur)
+    // Grade cible sÃ©lectionnÃ© par le joueur (stockÃ© cÃ´tÃ© serveur)
     private int targetGrade = 0;
 
-    // Réservoir interne de Card Dust (jusqu'à 10,000 dusts)
+    // Server-owned process, saved with the machine rather than with its open GUI.
+    private int restoreProgress = 0;
+    private int restoreDuration = 0;
+    private int restoreDustCost = 0;
+    private ItemStack restoreInput = ItemStack.EMPTY;
+    public static final int DATA_COUNT = 12;
+
+    // RÃ©servoir interne de Card Dust (jusqu'Ã  10,000 dusts)
     private int storedDust = 0;
     public static final int MAX_STORED_DUST = 10000;
 
     /**
-     * ContainerData synchronisé avec le client :
-     * [0] = grade actuel de la carte (0 si slot vide)
-     * [1] = grade cible sélectionné
-     * [2] = coût en card dust
-     * [3] = card dust stockée dans le réservoir interne
-     * [4] = capacité maximale du réservoir (10000)
+     * Menu data: grade, target, cost low bits, stored dust, capacity,
+     * progress low/high, duration low/high, expected duration low/high, cost high bits.
+     * Vanilla menu data packets carry signed shorts, so large values use two slots.
      */
     protected final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -56,9 +60,16 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
             return switch (index) {
                 case 0 -> getCurrentCardGrade();
                 case 1 -> CardRestorerBlockEntity.this.targetGrade;
-                case 2 -> calculateDustCost();
+                case 2 -> calculateDustCost() & 0xFFFF;
                 case 3 -> CardRestorerBlockEntity.this.storedDust;
                 case 4 -> MAX_STORED_DUST;
+                case 5 -> restoreProgress & 0xFFFF;
+                case 6 -> restoreProgress >>> 16;
+                case 7 -> restoreDuration & 0xFFFF;
+                case 8 -> restoreDuration >>> 16;
+                case 9 -> getExpectedRestoreDuration() & 0xFFFF;
+                case 10 -> getExpectedRestoreDuration() >>> 16;
+                case 11 -> calculateDustCost() >>> 16;
                 default -> 0;
             };
         }
@@ -74,7 +85,7 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
 
         @Override
         public int getCount() {
-            return 5;
+            return DATA_COUNT;
         }
     };
 
@@ -88,7 +99,7 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
     }
 
     // -------------------------------------------------------------------------
-    // Server Ticking - Absorption automatique de la Dust dans le réservoir
+    // Server Ticking - Absorption automatique de la Dust dans le rÃ©servoir
     // -------------------------------------------------------------------------
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, CardRestorerBlockEntity blockEntity) {
@@ -96,7 +107,7 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
 
         boolean changed = false;
 
-        // Absorber la dust depuis les slots 1 à 4 vers le réservoir interne
+        // Absorber la dust depuis les slots 1 Ã  4 vers le rÃ©servoir interne
         if (blockEntity.storedDust < MAX_STORED_DUST) {
             for (int i = 1; i <= 4; i++) {
                 ItemStack stack = blockEntity.getItem(i);
@@ -122,9 +133,37 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
             }
         }
 
+        // This runs even when nobody has the menu open, just like a furnace.
+        if (blockEntity.isRestoring()) {
+            if (!blockEntity.hasRestoreInput()) {
+                blockEntity.resetRestore();
+                changed = true;
+            } else if (blockEntity.getTotalDustAvailable() >= blockEntity.restoreDustCost) {
+                blockEntity.restoreProgress++;
+                blockEntity.setChanged();
+                if (blockEntity.restoreProgress >= blockEntity.restoreDuration) {
+                    blockEntity.finishRestore();
+                    changed = true;
+                }
+            }
+        }
+
         if (changed) {
+            blockEntity.updateBlockState();
             blockEntity.setChanged();
             blockEntity.sync();
+        }
+    }
+
+    public void updateBlockState() {
+        if (this.level != null && !this.level.isClientSide) {
+            BlockState currentState = getBlockState();
+            if (currentState.getBlock() instanceof com.howlite.cobblemoncards.block.CardRestorerBlock) {
+                int expectedLevel = com.howlite.cobblemoncards.block.CardRestorerBlock.getDustLevel(this.storedDust, MAX_STORED_DUST);
+                if (currentState.getValue(com.howlite.cobblemoncards.block.CardRestorerBlock.DUST_LEVEL) != expectedLevel) {
+                    this.level.setBlock(this.worldPosition, currentState.setValue(com.howlite.cobblemoncards.block.CardRestorerBlock.DUST_LEVEL, expectedLevel), 3);
+                }
+            }
         }
     }
 
@@ -141,6 +180,7 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
     }
 
     public int calculateDustCost() {
+        if (isRestoring()) return restoreDustCost;
         int currentGrade = getCurrentCardGrade();
         int target = targetGrade;
         if (target <= currentGrade || target > 10 || currentGrade <= 0) return 0;
@@ -176,41 +216,60 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
     // Restore Logic
     // -------------------------------------------------------------------------
 
-    public boolean performRestore(Player player) {
-        if (level == null || level.isClientSide) return false;
+    public boolean isRestoring() {
+        return restoreDuration > 0;
+    }
+
+    public int getExpectedRestoreDuration() {
+        if (isRestoring()) return restoreDuration;
+        int currentGrade = getCurrentCardGrade();
+        return currentGrade > 0 && targetGrade > currentGrade
+                ? CobblemonCardsConfig.getRestorerProcessTime(targetGrade) : 0;
+    }
+
+    public boolean startRestore(Player player) {
+        if (level == null || level.isClientSide || isRestoring() || !stillValid(player)) return false;
 
         ItemStack cardStack = getItem(0);
-        if (cardStack.isEmpty()) return false;
-
         CardData data = cardStack.get(ModDataComponents.CARD_DATA);
-        if (data == null) return false;
-
-        int currentGrade = data.grade();
-        if (currentGrade <= 0) return false;
-
-        int target = targetGrade;
-        if (target <= currentGrade || target > 10) return false;
+        if (data == null || cardStack.getCount() != 1 || data.grade() <= 0
+                || targetGrade <= data.grade() || targetGrade > 10) return false;
 
         int dustCost = calculateDustCost();
-        if (dustCost <= 0) return false;
+        if (dustCost <= 0 || getTotalDustAvailable() < dustCost) return false;
 
-        int dustAvailable = getTotalDustAvailable();
-        if (dustAvailable < dustCost) return false;
+        restoreInput = cardStack.copy();
+        restoreDustCost = dustCost;
+        restoreDuration = getExpectedRestoreDuration();
+        restoreProgress = 0;
+        setChanged();
+        sync();
+        return true;
+    }
 
-        // Déduire le coût en priorité du réservoir
-        int remainingCost = dustCost;
-        if (storedDust >= remainingCost) {
-            storedDust -= remainingCost;
-            remainingCost = 0;
-        } else {
-            remainingCost -= storedDust;
-            storedDust = 0;
+    private boolean hasRestoreInput() {
+        return !restoreInput.isEmpty() && ItemStack.matches(restoreInput, getItem(0));
+    }
+
+    private void resetRestore() {
+        restoreProgress = 0;
+        restoreDuration = 0;
+        restoreDustCost = 0;
+        restoreInput = ItemStack.EMPTY;
+    }
+
+    private void finishRestore() {
+        ItemStack cardStack = getItem(0);
+        CardData data = cardStack.get(ModDataComponents.CARD_DATA);
+        if (data == null || !hasRestoreInput()) {
+            resetRestore();
+            return;
         }
+        int currentGrade = data.grade();
+        int target = targetGrade;
 
-        // Si besoin, consommer le reste dans les slots 1 à 4
-        if (remainingCost > 0) {
-            consumeDustFromSlots(remainingCost);
-        }
+        // Charge only at completion; removing the input cancels without spending dust.
+        consumeDust(restoreDustCost);
 
         // Upgrader la carte (recalcul du bonus stat)
         float currentBonus = currentGrade * 0.03f;
@@ -220,18 +279,24 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
                 : data.statValue();
         float newStatValue = baseStatValue * (1f + targetBonus);
 
-        // Restoring can lift a card to grade 9+, which is the main way to earn a "trainer" stat.
-        // Without this, a card restored to grade 10 could never obtain one (the Grading Station only
-        // ever runs on grade-0 cards). Gated on newly CROSSING the threshold, so repeatedly restoring
-        // an already-9 card to 10 isn't a cheap re-roll.
-        CardStat finalStat = data.stat();
-        if (currentGrade < CobblemonCardsConfig.trainerStatMinGrade
+        // La stat de base de la carte n'est JAMAIS Ã©crasÃ©e !
+        // Si la carte atteint le grade 9+, elle peut dÃ©bloquer une stat Trainer SUPPLÃ‰MENTAIRE.
+        java.util.Optional<CardStat> finalTrainerStat = data.trainerStat();
+        java.util.Optional<Float> finalTrainerStatValue = data.trainerStatValue();
+
+        if (finalTrainerStat.isPresent() && finalTrainerStatValue.isPresent()) {
+            float baseTrainer = currentGrade > 0
+                    ? finalTrainerStatValue.get() / (1f + currentBonus)
+                    : finalTrainerStatValue.get();
+            finalTrainerStatValue = java.util.Optional.of(baseTrainer * (1f + targetBonus));
+        } else if (currentGrade < CobblemonCardsConfig.trainerStatMinGrade
                 && target >= CobblemonCardsConfig.trainerStatMinGrade
                 && !com.howlite.cobblemoncards.util.CardUtil.isCosmeticCard(data.pokemonId())) {
             CardStat trainerStat = com.howlite.cobblemoncards.util.CardStatUtil
                     .rollTrainerStatForGrade(target, RANDOM);
             if (trainerStat != null) {
-                finalStat = trainerStat;
+                finalTrainerStat = java.util.Optional.of(trainerStat);
+                finalTrainerStatValue = java.util.Optional.of(newStatValue * CobblemonCardsConfig.trainerStatLuckyValueMultiplier);
             }
         }
 
@@ -239,42 +304,58 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
                 data.pokemonId(),
                 data.isShiny(),
                 data.rarity(),
-                finalStat,
+                data.stat(),
                 newStatValue,
                 target,
                 data.background(),
-                data.effect()
+                data.effect(),
+                finalTrainerStat,
+                finalTrainerStatValue
         );
         cardStack.set(ModDataComponents.CARD_DATA, newData);
 
         targetGrade = 0;
+        resetRestore();
 
-        if (level != null) {
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.ENCHANT,
+                    worldPosition.getX() + 0.5, worldPosition.getY() + 0.8, worldPosition.getZ() + 0.5,
+                    35, 0.3, 0.4, 0.3, 0.8);
+            serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.PORTAL,
+                    worldPosition.getX() + 0.5, worldPosition.getY() + 0.8, worldPosition.getZ() + 0.5,
+                    20, 0.2, 0.2, 0.2, 0.1);
+            serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
+                    worldPosition.getX() + 0.5, worldPosition.getY() + 0.9, worldPosition.getZ() + 0.5,
+                    12, 0.15, 0.2, 0.15, 0.05);
+            level.playSound(null, worldPosition,
+                    net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP,
+                    net.minecraft.sounds.SoundSource.BLOCKS, 1.0f, 1.2f);
             level.playSound(null, worldPosition,
                     net.minecraft.sounds.SoundEvents.ENCHANTMENT_TABLE_USE,
                     net.minecraft.sounds.SoundSource.BLOCKS, 1.0f, 1.2f);
         }
 
-        setChanged();
-        sync();
-        return true;
     }
 
-    private void consumeDustFromSlots(int amount) {
-        int remaining = amount;
+    private void consumeDust(int amount) {
+        int fromReservoir = Math.min(storedDust, amount);
+        storedDust -= fromReservoir;
+        int remaining = amount - fromReservoir;
         for (int i = 1; i <= 4 && remaining > 0; i++) {
             ItemStack stack = getItem(i);
-            if (stack.isEmpty()) continue;
+            int unitValue = stack.is(ModItems.CARD_DUST) ? 1
+                    : stack.is(ModItems.CARD_DUST_POUCH) ? 64
+                    : stack.is(ModBlocks.CARD_DUST_SACK.asItem()) ? 576 : 0;
+            if (stack.isEmpty() || unitValue == 0) continue;
 
-            if (stack.is(ModItems.CARD_DUST)) {
-                int count = stack.getCount();
-                if (count >= remaining) {
-                    stack.shrink(remaining);
-                    remaining = 0;
-                } else {
-                    remaining -= count;
-                    setItem(i, ItemStack.EMPTY);
-                }
+            int units = Math.min(stack.getCount(), (remaining + unitValue - 1) / unitValue);
+            int dust = units * unitValue;
+            stack.shrink(units);
+            if (dust > remaining) {
+                storedDust += dust - remaining; // Keep change from a pouch or sack.
+                remaining = 0;
+            } else {
+                remaining -= dust;
             }
         }
     }
@@ -288,9 +369,45 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
     }
 
     public void setTargetGrade(int grade) {
+        if (level == null || level.isClientSide || isRestoring() || grade < 0 || grade > 10) return;
         this.targetGrade = grade;
         setChanged();
         sync();
+    }
+
+    @Override
+    public void setItem(int slot, ItemStack stack) {
+        ImplementedInventory.super.setItem(slot, stack);
+        if (slot == 0) checkRestoreInput();
+    }
+
+    @Override
+    public ItemStack removeItem(int slot, int count) {
+        ItemStack removed = ImplementedInventory.super.removeItem(slot, count);
+        if (slot == 0) checkRestoreInput();
+        return removed;
+    }
+
+    @Override
+    public ItemStack removeItemNoUpdate(int slot) {
+        ItemStack removed = ImplementedInventory.super.removeItemNoUpdate(slot);
+        if (slot == 0) checkRestoreInput();
+        return removed;
+    }
+
+    private void checkRestoreInput() {
+        if (level != null && !level.isClientSide && isRestoring() && !hasRestoreInput()) {
+            resetRestore();
+            setChanged();
+            sync();
+        }
+    }
+
+    @Override
+    public boolean stillValid(Player player) {
+        return level != null && level.getBlockEntity(worldPosition) == this
+                && player.distanceToSqr(worldPosition.getX() + 0.5,
+                worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) <= 64.0;
     }
 
     @Override
@@ -310,9 +427,19 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        this.inventory.clear();
         ContainerHelper.loadAllItems(tag, this.inventory, registries);
         this.targetGrade = tag.getInt("TargetGrade");
         this.storedDust = tag.getInt("StoredDust");
+        this.restoreDuration = Math.clamp(tag.getInt("RestoreDuration"), 0, 648000);
+        this.restoreProgress = Math.clamp(tag.getInt("RestoreProgress"), 0, restoreDuration);
+        this.restoreDustCost = Math.max(0, tag.getInt("RestoreDustCost"));
+        this.restoreInput = ItemStack.parseOptional(registries, tag.getCompound("RestoreInput"));
+        if (isRestoring() && (restoreDustCost <= 0 || targetGrade < 2 || targetGrade > 10
+                || targetGrade <= getCurrentCardGrade() || !hasRestoreInput())) {
+            resetRestore();
+        }
+        updateBlockState();
     }
 
     @Override
@@ -321,6 +448,12 @@ public class CardRestorerBlockEntity extends BlockEntity implements ImplementedI
         ContainerHelper.saveAllItems(tag, this.inventory, registries);
         tag.putInt("TargetGrade", this.targetGrade);
         tag.putInt("StoredDust", this.storedDust);
+        tag.putInt("RestoreProgress", this.restoreProgress);
+        tag.putInt("RestoreDuration", this.restoreDuration);
+        tag.putInt("RestoreDustCost", this.restoreDustCost);
+        if (!this.restoreInput.isEmpty()) {
+            tag.put("RestoreInput", this.restoreInput.save(registries));
+        }
     }
 
     // -------------------------------------------------------------------------

@@ -67,16 +67,24 @@ Witness over **20 unique procedural holographic effects** powered by custom shad
 
 Cobblemon Cards is fully configurable out of the box via **MidnightConfig**. You can access the configuration menu in-game (requires *ModMenu*) or by editing the `config/cobblemon-cards.json` file.
 
+The in-game menu groups settings into six tabs: **General**, **Player**, **Spawning**, **Trainer**, **Machines**, and **Binders**. Colored section headings and tooltips help locate related options. Existing configuration keys and values remain compatible.
+
 | Config Option | Default Value | Range / Type | Description |
 | :--- | :--- | :--- | :--- |
 | `globalStatMultiplier` | `10.0` | `0.1` - `100.0` | Multiplier applied to all passive RPG statistics bonuses granted by slotted cards. |
 | `recyclerProcessTime` | `40` | `1` - `1200` | Time (in ticks) it takes for a Card Recycler to process one card. |
 | `gradingStationProcessTime` | `100` | `1` - `12000` | Time (in ticks) it takes for a Grading Station to grade a card. |
 | `gradingStationDustCost` | `5` | `0` - `64` | Amount of Cobblecard Dust required to grade a card. |
+| `restorerBaseProcessTime` | `60` | `1` - `72000` | Base restoration duration in ticks for target grade 2 (20 ticks = 1 second). |
+| `restorerProcessTimePerGrade` | `60` | `0` - `72000` | Extra ticks per target grade above 2. Set to 0 for a fixed duration. |
 | `godPackTicketChance` | `1.0` | `0.0` - `100.0` | Percentage chance of obtaining a God Pack Ticket when opening a Booster Pack. |
 | `cardDropChance` | `1.0` | `0.0` - `100.0` | Percentage chance for a defeated or captured Pokémon to drop a card. |
 | `enableBoosterChestSpawn` | `true` | `Boolean` | Whether classic booster packs should spawn in Minecraft structure chests. |
 | `boosterChestSpawnChance` | `2.0` | `0.0` - `100.0` | Percentage chance to find a classic booster pack inside a structure chest. |
+
+Card restoration uses the **server's configuration**: `duration = restorerBaseProcessTime + (targetGrade - 2) * restorerProcessTimePerGrade`. Defaults give 3 seconds for grade 2, 12 seconds for grade 5, and 27 seconds for grade 10. Changes apply to new operations.
+
+After pressing Restore, the machine keeps working when the GUI closes. Progress survives world saves and resumes when its chunk is loaded, like a furnace. Reopening the GUI shows the remaining time. Dust is spent once at completion; removing the card cancels the operation, and removing required dust pauses it until the machine is refilled.
 
 </details>
 

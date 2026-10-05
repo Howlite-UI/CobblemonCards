@@ -173,14 +173,19 @@ public class GradingStationBlockEntity extends BlockEntity implements Implemente
                 float bonusMultiplier = newGrade * 0.03f;
                 float newStatValue = oldData.statValue() + (oldData.statValue() * bonusMultiplier);
 
-                // A high grade is the main way to earn a "trainer" stat (Exp / Catch / Shiny).
-                // Cosmetic cards are excluded: they are meant to carry no stats at all.
-                CardStat finalStat = oldData.stat();
-                if (!com.howlite.cobblemoncards.util.CardUtil.isCosmeticCard(oldData.pokemonId())) {
-                    CardStat trainerStat = com.howlite.cobblemoncards.util.CardStatUtil
+                // La stat de base est TOUJOURS conservée !
+                // Un grade élevé (>= 9) permet d'obtenir une stat Trainer EN PLUS.
+                java.util.Optional<CardStat> trainerStat = oldData.trainerStat();
+                java.util.Optional<Float> trainerStatVal = oldData.trainerStatValue();
+
+                if (trainerStat.isPresent() && trainerStatVal.isPresent()) {
+                    trainerStatVal = java.util.Optional.of(trainerStatVal.get() * (1f + bonusMultiplier));
+                } else if (!com.howlite.cobblemoncards.util.CardUtil.isCosmeticCard(oldData.pokemonId())) {
+                    CardStat rolled = com.howlite.cobblemoncards.util.CardStatUtil
                             .rollTrainerStatForGrade(newGrade, RANDOM);
-                    if (trainerStat != null) {
-                        finalStat = trainerStat;
+                    if (rolled != null) {
+                        trainerStat = java.util.Optional.of(rolled);
+                        trainerStatVal = java.util.Optional.of(newStatValue * CobblemonCardsConfig.trainerStatLuckyValueMultiplier);
                     }
                 }
 
@@ -188,11 +193,13 @@ public class GradingStationBlockEntity extends BlockEntity implements Implemente
                         oldData.pokemonId(),
                         oldData.isShiny(),
                         oldData.rarity(),
-                        finalStat,
+                        oldData.stat(),
                         newStatValue,
                         newGrade,
                         oldData.background(),
-                        oldData.effect()
+                        oldData.effect(),
+                        trainerStat,
+                        trainerStatVal
                 );
                 
                 stack.set(ModDataComponents.CARD_DATA, newData);

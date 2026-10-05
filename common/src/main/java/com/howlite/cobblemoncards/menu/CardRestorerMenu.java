@@ -27,12 +27,13 @@ public class CardRestorerMenu extends AbstractContainerMenu {
     // 32-40    : hotbar joueur (1x9)
 
     public CardRestorerMenu(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, new SimpleContainer(5), new SimpleContainerData(5));
+        this(containerId, playerInventory, new SimpleContainer(5), new SimpleContainerData(CardRestorerBlockEntity.DATA_COUNT));
     }
 
     public CardRestorerMenu(int containerId, Inventory playerInventory, Container container, ContainerData data) {
         super(ModMenuTypes.CARD_RESTORER_MENU, containerId);
         checkContainerSize(container, 5);
+        checkContainerDataCount(data, CardRestorerBlockEntity.DATA_COUNT);
         this.container = container;
         this.data = data;
 
@@ -40,8 +41,8 @@ public class CardRestorerMenu extends AbstractContainerMenu {
             this.blockEntity = be;
         }
 
-        // Slot 0: Carte insérée (Centrée dans le cadre X=108, Y=35)
-        this.addSlot(new CardSlot(container, 0, 108, 35));
+        // Slot 0: Carte insérée (Centrée dans le cadre X=108, Y=41)
+        this.addSlot(new CardSlot(container, 0, 108, 41));
 
         // Slots 1-4: Card Dust Input (Grille 2x2 alignée sur les 4 cases à droite X=188/206, Y=51/69 ajusté +7px X)
         this.addSlot(new DustSlot(container, 1, 188, 51));
@@ -104,7 +105,7 @@ public class CardRestorerMenu extends AbstractContainerMenu {
     }
 
     public int getDustCost() {
-        return this.data.get(2);
+        return getSyncedInt(2, 11);
     }
 
     public int getStoredDust() {
@@ -116,7 +117,40 @@ public class CardRestorerMenu extends AbstractContainerMenu {
         return max > 0 ? max : 10000;
     }
 
+    private int getSyncedInt(int lowIndex, int highIndex) {
+        return (this.data.get(lowIndex) & 0xFFFF) | ((this.data.get(highIndex) & 0xFFFF) << 16);
+    }
+
+    public int getRestoreProgress() {
+        return getSyncedInt(5, 6);
+    }
+
+    public int getRestoreDuration() {
+        return getSyncedInt(7, 8);
+    }
+
+    public int getExpectedRestoreDuration() {
+        return getSyncedInt(9, 10);
+    }
+
+    public int getRemainingRestoreTicks() {
+        return Math.max(0, getRestoreDuration() - getRestoreProgress());
+    }
+
+    public boolean isRestoring() {
+        return getRestoreDuration() > 0;
+    }
+
+    public float getRestoreProgressFraction() {
+        int duration = getRestoreDuration();
+        return duration > 0 ? Math.clamp((float) getRestoreProgress() / duration, 0.0f, 1.0f) : 0.0f;
+    }
+
     public boolean canRestore() {
+        return !isRestoring() && hasEnoughDustForRestore();
+    }
+
+    public boolean hasEnoughDustForRestore() {
         int currentGrade = getCurrentCardGrade();
         int target = getTargetGrade();
         int cost = getDustCost();

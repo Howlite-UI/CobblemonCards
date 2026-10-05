@@ -30,10 +30,14 @@ import org.jetbrains.annotations.Nullable;
 public class CardRestorerBlock extends BaseEntityBlock {
     public static final MapCodec<CardRestorerBlock> CODEC = simpleCodec(CardRestorerBlock::new);
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    public static final net.minecraft.world.level.block.state.properties.IntegerProperty DUST_LEVEL =
+            net.minecraft.world.level.block.state.properties.IntegerProperty.create("dust_level", 0, 4);
 
     public CardRestorerBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(FACING, Direction.NORTH)
+                .setValue(DUST_LEVEL, 0));
     }
 
     @Override
@@ -44,7 +48,9 @@ public class CardRestorerBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        return this.defaultBlockState()
+                .setValue(FACING, context.getHorizontalDirection().getOpposite())
+                .setValue(DUST_LEVEL, 0);
     }
 
     @Override
@@ -59,7 +65,13 @@ public class CardRestorerBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, DUST_LEVEL);
+    }
+
+    public static int getDustLevel(int storedDust, int maxDust) {
+        if (storedDust <= 0) return 0;
+        int level = (int) Math.ceil(((double) storedDust / maxDust) * 4);
+        return Math.max(1, Math.min(4, level));
     }
 
     @Nullable
@@ -73,11 +85,12 @@ public class CardRestorerBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    // Pas de ticker nécessaire (pas de traitement en ticks)
+    // Absorption de dust et progression de la restauration côté serveur.
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.CARD_RESTORER_BE, CardRestorerBlockEntity::serverTick);
+        return level.isClientSide ? null
+                : createTickerHelper(type, ModBlockEntities.CARD_RESTORER_BE, CardRestorerBlockEntity::serverTick);
     }
 
     @Override

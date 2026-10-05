@@ -256,48 +256,48 @@ public class BoosterLootTable {
         // finalValue = statValue × globalStatMultiplier (défaut 10)
         switch (rarity) {
             case "common":
-                // ×10 → +0.05 à +0.10 (quasi cosmétique, encourage la progression)
-                statValue = 0.005f + RANDOM.nextFloat() * 0.005f;
+                // ×10 → +0.50 à +1.00
+                statValue = 0.05f + RANDOM.nextFloat() * 0.05f;
                 bgChance = 0.05f; // 5%
                 effChance = 0.02f; // 2%
                 break;
             case "uncommon":
-                // ×10 → +0.15 à +0.30 (notable mais faible)
-                statValue = 0.015f + RANDOM.nextFloat() * 0.015f;
+                // ×10 → +1.50 à +3.00
+                statValue = 0.15f + RANDOM.nextFloat() * 0.15f;
                 bgChance = 0.20f; // 20%
                 effChance = 0.10f; // 10%
                 break;
             case "rare":
-                // ×10 → +0.40 à +0.70 (solide, vaut la peine d'équiper)
-                statValue = 0.04f + RANDOM.nextFloat() * 0.03f;
+                // ×10 → +4.00 à +7.00
+                statValue = 0.40f + RANDOM.nextFloat() * 0.30f;
                 bgChance = 0.50f; // 50%
                 effChance = 0.40f; // 40%
                 break;
             case "epic":
-                // ×10 → +0.80 à +1.20 (vraiment différent des Rare!)
-                statValue = 0.08f + RANDOM.nextFloat() * 0.04f;
+                // ×10 → +8.00 à +12.00
+                statValue = 0.80f + RANDOM.nextFloat() * 0.40f;
                 bgChance = 0.90f; // 90%
                 effChance = 0.85f; // 85%
                 break;
             case "legendary":
-                // ×10 → +1.20 à +1.80 (pièce de collection, forte impact)
-                statValue = 0.12f + RANDOM.nextFloat() * 0.06f;
+                // ×10 → +12.00 à +18.00
+                statValue = 1.20f + RANDOM.nextFloat() * 0.60f;
                 bgChance = 1.00f; // 100%
                 effChance = 1.00f; // 100%
                 break;
             case "mythic":
-                // ×10 → +2.00 à +2.50 (rarissime, max de ce qu'on veut permettre)
-                statValue = 0.20f + RANDOM.nextFloat() * 0.05f;
+                // ×10 → +20.00 à +25.00
+                statValue = 2.00f + RANDOM.nextFloat() * 0.50f;
                 bgChance = 1.00f; // 100%
                 effChance = 1.00f; // 100%
                 break;
             default:
-                statValue = 0.005f;
+                statValue = 0.05f;
         }
 
-        // Bonus Shiny — réduit pour rester raisonnable
+        // Bonus Shiny
         if (isShiny) {
-            statValue += 0.03f; // ×10 → +0.3 bonus shiny (au lieu de +0.5 avant)
+            statValue += 0.30f; // ×10 → +3.0 bonus shiny
             bgChance = Math.max(bgChance, 0.8f);
             effChance = Math.max(effChance, 0.8f);
         }
@@ -332,14 +332,12 @@ public class BoosterLootTable {
             }
         }
 
-        com.howlite.cobblemoncards.util.CardStatUtil.RolledStat rolled =
-                com.howlite.cobblemoncards.util.CardStatUtil.applyLuckyTrainerStat(
-                        stat, statValue, rarity, isShiny, RANDOM);
-        stat = rolled.stat();
-        statValue = rolled.value();
+        com.howlite.cobblemoncards.util.CardStatUtil.LuckyTrainerStat lucky =
+                com.howlite.cobblemoncards.util.CardStatUtil.rollLuckyTrainerStat(
+                        statValue, rarity, isShiny, RANDOM);
 
         ItemStack cardStack = new ItemStack(ModItems.CARD);
-        CardData data = new CardData(pokemonId, isShiny, rarity, stat, statValue, 0, background, effect);
+        CardData data = new CardData(pokemonId, isShiny, rarity, stat, statValue, 0, background, effect, lucky.stat(), lucky.value());
         cardStack.set(ModDataComponents.CARD_DATA, data);
 
         return cardStack;

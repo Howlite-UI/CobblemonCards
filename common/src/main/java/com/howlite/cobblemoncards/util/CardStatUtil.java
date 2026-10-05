@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.function.Predicate;
 
@@ -69,13 +70,20 @@ public class CardStatUtil {
     public static void collectStats(ItemStack binderStack, Predicate<CardStat> filter, Map<CardStat, Float> out) {
         for (ItemStack contentStack : getBinderContents(binderStack)) {
             CardData cardData = contentStack.get(ModDataComponents.CARD_DATA);
-            if (cardData == null || cardData.stat() == null || CardUtil.isCosmeticCard(cardData.pokemonId())) {
+            if (cardData == null || CardUtil.isCosmeticCard(cardData.pokemonId())) {
                 continue;
             }
-            if (filter != null && !filter.test(cardData.stat())) {
-                continue;
+            if (cardData.stat() != null && (filter == null || filter.test(cardData.stat()))) {
+                out.merge(cardData.stat(), cardData.statValue(), Float::sum);
             }
-            out.merge(cardData.stat(), cardData.statValue(), Float::sum);
+            if (cardData.trainerStat() != null && cardData.trainerStat().isPresent()
+                    && cardData.trainerStatValue() != null && cardData.trainerStatValue().isPresent()) {
+                CardStat tStat = cardData.trainerStat().get();
+                float tVal = cardData.trainerStatValue().get();
+                if (filter == null || filter.test(tStat)) {
+                    out.merge(tStat, tVal, Float::sum);
+                }
+            }
         }
     }
 
@@ -107,6 +115,9 @@ public class CardStatUtil {
                 continue;
             }
             if (!(equipped.stack().getItem() instanceof BinderItem binder)) {
+                continue;
+            }
+            if (equipped.stack().getItem() instanceof MasterAlbumItem && !CobblemonCardsConfig.masterAlbumGivesStats) {
                 continue;
             }
             collectStats(equipped.stack(), filter, totals);
@@ -204,9 +215,10 @@ public class CardStatUtil {
     public static String formatValue(CardStat stat, float totalStatValue) {
         float value = getEffectiveValue(stat, totalStatValue);
         String sign = value >= 0 ? "+" : "";
+        String format = (Math.abs(value) > 0f && Math.abs(value) < 0.1f) ? "%s%.2f" : "%s%.1f";
         return isFlat(stat)
-                ? String.format(java.util.Locale.ROOT, "%s%.1f", sign, value)
-                : String.format(java.util.Locale.ROOT, "%s%.1f%%", sign, value);
+                ? String.format(java.util.Locale.ROOT, format, sign, value)
+                : String.format(java.util.Locale.ROOT, format + "%%", sign, value);
     }
 
     /** Same as {@link #formatValue(CardStat, float)} but as a {@link Component}. */
@@ -305,6 +317,26 @@ public class CardStatUtil {
      * Returned as a pair so the two generation sites (mob drops and booster packs) stay in sync.
      */
     public record RolledStat(CardStat stat, float value) {}
+
+    public record LuckyTrainerStat(Optional<CardStat> stat, Optional<Float> value) {}
+
+    /**
+     * Rolls the lucky trainer-stat chance for Legendary / Mythic / Shiny cards.
+     * Unlike previous versions, this does NOT replace the primary stat; it is granted as a bonus.
+     */
+    public static LuckyTrainerStat rollLuckyTrainerStat(float baseValue, String rarity,
+                                                       boolean isShiny, Random random) {
+        if (!CobblemonCardsConfig.enableTrainerStats
+                || !isLuckyCard(rarity, isShiny)
+                || random.nextFloat() * 100f >= CobblemonCardsConfig.trainerStatLuckyChance) {
+            return new LuckyTrainerStat(Optional.empty(), Optional.empty());
+        }
+        CardStat lucky = randomTrainerStat(random);
+        if (lucky == null) {
+            return new LuckyTrainerStat(Optional.empty(), Optional.empty());
+        }
+        return new LuckyTrainerStat(Optional.of(lucky), Optional.of(baseValue * CobblemonCardsConfig.trainerStatLuckyValueMultiplier));
+    }
 
     /**
      * Applies the small Legendary / Mythic / Shiny chance to grant a trainer stat at a reduced value.

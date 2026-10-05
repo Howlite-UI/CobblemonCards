@@ -506,7 +506,7 @@ public class GiveCardCommand {
                 com.howlite.cobblemoncards.component.CardData data = new com.howlite.cobblemoncards.component.CardData(
                         pokemonId, isShiny, rarity,
                         com.howlite.cobblemoncards.component.CardStat.MOVEMENT_SPEED,
-                        0.05f, 0, background, effect);
+                        0.50f, 0, background, effect);
                 cardStack.set(com.howlite.cobblemoncards.component.ModDataComponents.CARD_DATA, data);
                 cards.add(cardStack);
             }
@@ -531,7 +531,7 @@ public class GiveCardCommand {
             String rarity = StringArgumentType.getString(context, "rarity").toLowerCase();
 
             CardStat stat = CardStat.MOVEMENT_SPEED;
-            float statValue = 0.05f;
+            float statValue = 0.50f;
             Optional<String> background = Optional.empty();
             Optional<String> effect = Optional.empty();
 

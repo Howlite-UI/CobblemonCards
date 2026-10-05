@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "cobblemon-cards:block/card_restorer_side",
+    "down": "cobblemon-cards:block/card_restorer_bottom",
+    "up": "cobblemon-cards:block/card_restorer_top",
+    "north": "cobblemon-cards:block/card_restorer_front_1",
+    "south": "cobblemon-cards:block/card_restorer_back",
+    "west": "cobblemon-cards:block/card_restorer_side",
+    "east": "cobblemon-cards:block/card_restorer_side"
+  }
+}

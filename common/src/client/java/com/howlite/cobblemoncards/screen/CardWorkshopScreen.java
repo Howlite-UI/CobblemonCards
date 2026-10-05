@@ -56,7 +56,7 @@ public class CardWorkshopScreen extends Screen {
             "holo_time_gears", "holo_spatial_crack", "holo_prism_stars", "none"
     );
 
-    private static final List<Float> STAT_VALUES = Arrays.asList(0.01f, 0.05f, 0.10f, 0.15f, 0.20f, 0.25f, 0.50f, 1.00f);
+    private static final List<Float> STAT_VALUES = Arrays.asList(0.10f, 0.25f, 0.50f, 0.75f, 1.00f, 1.50f, 2.00f, 2.50f, 5.00f);
 
     private List<String> allSpeciesNames = new ArrayList<>();
     private List<String> filteredItems = new ArrayList<>();
@@ -67,7 +67,7 @@ public class CardWorkshopScreen extends Screen {
     private int backgroundIndex = BACKGROUNDS.indexOf("none");
     private int effectIndex = EFFECTS.indexOf("none");
     private int statIndex = 0;
-    private int statValueIndex = 1; // Default: +5% (0.05f)
+    private int statValueIndex = 2; // Default: +5% (0.50f)
     private boolean isCardLocked = false;
 
     private EditBox searchBox;

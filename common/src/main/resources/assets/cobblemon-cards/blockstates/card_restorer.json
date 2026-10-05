@@ -1,8 +1,28 @@
 {
   "variants": {
-    "facing=north": { "model": "cobblemon-cards:block/card_restorer" },
-    "facing=south": { "model": "cobblemon-cards:block/card_restorer", "y": 180 },
-    "facing=west": { "model": "cobblemon-cards:block/card_restorer", "y": 270 },
-    "facing=east": { "model": "cobblemon-cards:block/card_restorer", "y": 90 }
+    "dust_level=0,facing=north": { "model": "cobblemon-cards:block/card_restorer" },
+    "dust_level=0,facing=south": { "model": "cobblemon-cards:block/card_restorer", "y": 180 },
+    "dust_level=0,facing=west": { "model": "cobblemon-cards:block/card_restorer", "y": 270 },
+    "dust_level=0,facing=east": { "model": "cobblemon-cards:block/card_restorer", "y": 90 },
+
+    "dust_level=1,facing=north": { "model": "cobblemon-cards:block/card_restorer_1" },
+    "dust_level=1,facing=south": { "model": "cobblemon-cards:block/card_restorer_1", "y": 180 },
+    "dust_level=1,facing=west": { "model": "cobblemon-cards:block/card_restorer_1", "y": 270 },
+    "dust_level=1,facing=east": { "model": "cobblemon-cards:block/card_restorer_1", "y": 90 },
+
+    "dust_level=2,facing=north": { "model": "cobblemon-cards:block/card_restorer_2" },
+    "dust_level=2,facing=south": { "model": "cobblemon-cards:block/card_restorer_2", "y": 180 },
+    "dust_level=2,facing=west": { "model": "cobblemon-cards:block/card_restorer_2", "y": 270 },
+    "dust_level=2,facing=east": { "model": "cobblemon-cards:block/card_restorer_2", "y": 90 },
+
+    "dust_level=3,facing=north": { "model": "cobblemon-cards:block/card_restorer_3" },
+    "dust_level=3,facing=south": { "model": "cobblemon-cards:block/card_restorer_3", "y": 180 },
+    "dust_level=3,facing=west": { "model": "cobblemon-cards:block/card_restorer_3", "y": 270 },
+    "dust_level=3,facing=east": { "model": "cobblemon-cards:block/card_restorer_3", "y": 90 },
+
+    "dust_level=4,facing=north": { "model": "cobblemon-cards:block/card_restorer_4" },
+    "dust_level=4,facing=south": { "model": "cobblemon-cards:block/card_restorer_4", "y": 180 },
+    "dust_level=4,facing=west": { "model": "cobblemon-cards:block/card_restorer_4", "y": 270 },
+    "dust_level=4,facing=east": { "model": "cobblemon-cards:block/card_restorer_4", "y": 90 }
   }
 }

@@ -256,7 +256,15 @@ public class BinderScreen extends AbstractContainerScreen<BinderMenu> {
             ItemStack stack = this.menu.getSlot(i).getItem();
             CardData data = stack.get(ModDataComponents.CARD_DATA);
             if (data != null && !com.howlite.cobblemoncards.util.CardUtil.isCosmeticCard(data.pokemonId())) {
-                stats.put(data.stat(), stats.getOrDefault(data.stat(), 0f) + data.statValue());
+                if (data.stat() != null) {
+                    stats.put(data.stat(), stats.getOrDefault(data.stat(), 0f) + data.statValue());
+                }
+                if (data.trainerStat() != null && data.trainerStat().isPresent()
+                        && data.trainerStatValue() != null && data.trainerStatValue().isPresent()) {
+                    CardStat tStat = data.trainerStat().get();
+                    float tVal = data.trainerStatValue().get();
+                    stats.put(tStat, stats.getOrDefault(tStat, 0f) + tVal);
+                }
             }
         }
 

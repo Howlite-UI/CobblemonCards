@@ -148,21 +148,18 @@ public class ModEvents {
 
             // Stat value cohérente avec la rareté (même barème que les Boosters)
             float statValue = switch (rarity) {
-                case "mythic"    -> 0.20f + RANDOM.nextFloat() * 0.05f;
-                case "legendary" -> 0.12f + RANDOM.nextFloat() * 0.06f;
-                case "epic"      -> 0.08f + RANDOM.nextFloat() * 0.04f;
-                case "rare"      -> 0.04f + RANDOM.nextFloat() * 0.03f;
-                case "uncommon"  -> 0.015f + RANDOM.nextFloat() * 0.015f;
-                default          -> 0.005f + RANDOM.nextFloat() * 0.005f; // common
+                case "mythic"    -> 2.00f + RANDOM.nextFloat() * 0.50f;
+                case "legendary" -> 1.20f + RANDOM.nextFloat() * 0.60f;
+                case "epic"      -> 0.80f + RANDOM.nextFloat() * 0.40f;
+                case "rare"      -> 0.40f + RANDOM.nextFloat() * 0.30f;
+                case "uncommon"  -> 0.15f + RANDOM.nextFloat() * 0.15f;
+                default          -> 0.05f + RANDOM.nextFloat() * 0.05f; // common
             };
-            if (isShiny) statValue += 0.03f;
+            if (isShiny) statValue += 0.30f;
 
-            // Small chance for Legendary / Mythic / Shiny cards to carry a trainer stat instead,
-            // at a reduced value. Otherwise trainer stats are only earned by grading to 9+.
-            CardStatUtil.RolledStat rolled =
-                    CardStatUtil.applyLuckyTrainerStat(randomStat, statValue, rarity, isShiny, RANDOM);
-            randomStat = rolled.stat();
-            statValue = rolled.value();
+            // Chance pour les cartes Legendary / Mythic / Shiny d'avoir une stat Trainer SUPPLÉMENTAIRE
+            CardStatUtil.LuckyTrainerStat lucky =
+                    CardStatUtil.rollLuckyTrainerStat(statValue, rarity, isShiny, RANDOM);
 
             ItemStack cardStack = new ItemStack(ModItems.CARD);
             CardData cardData = new CardData(
@@ -173,7 +170,9 @@ public class ModEvents {
                     statValue,
                     0,
                     Optional.empty(),
-                    Optional.empty()
+                    Optional.empty(),
+                    lucky.stat(),
+                    lucky.value()
             );
             
             cardStack.set(ModDataComponents.CARD_DATA, cardData);

@@ -168,7 +168,9 @@ public class FabricCobblemonCards implements ModInitializer {
             context.server().execute(() -> {
                 if (context.player().containerMenu instanceof CardRestorerMenu menu) {
                     if (menu.getBlockEntity() != null) {
-                        menu.getBlockEntity().setTargetGrade(payload.targetGrade());
+                        if (menu.stillValid(context.player())) {
+                            menu.getBlockEntity().setTargetGrade(payload.targetGrade());
+                        }
                     }
                 }
             });
@@ -178,7 +180,7 @@ public class FabricCobblemonCards implements ModInitializer {
             context.server().execute(() -> {
                 if (context.player().containerMenu instanceof CardRestorerMenu menu) {
                     if (menu.getBlockEntity() != null) {
-                        menu.getBlockEntity().performRestore(context.player());
+                        menu.getBlockEntity().startRestore(context.player());
                     }
                 }
             });
