@@ -14,6 +14,7 @@ Changes by version. The V2 entry describes the prepared beta; it is not a stable
 - Restoration settings in MidnightLib: `restorerBaseProcessTime` and `restorerProcessTimePerGrade`.
 - Egg-group and EV-yield spawn bonuses, each disabled by default and configurable separately.
 - A V2 gameplay/configuration guide and upgrade instructions in both READMEs.
+- A documented datapack/resource-pack template for custom Fakemon card sprites.
 
 ### Changed
 
@@ -35,6 +36,7 @@ Changes by version. The V2 entry describes the prepared beta; it is not a stable
 - Fixed Card Cabinet contents disappearing after restart in the affected 1.0.5 code. Previously lost cards cannot be recovered by this change; 1.0.4 and earlier saves remain readable.
 - Cabinet serialization failures are logged; one invalid stack no longer aborts saving the entire cabinet. Breaking/placing a cabinet no longer shares mutable stack instances with its stored contents component.
 - Corrected experience-bonus multiplication so fractional boosts are applied before rounding.
+- Fakemon datapack reloads now refresh the booster species pool even when one entry is replaced by another and the whitelist size stays unchanged.
 
 ### Upgrade notes
 

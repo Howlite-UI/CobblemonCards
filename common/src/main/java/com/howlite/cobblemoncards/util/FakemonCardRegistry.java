@@ -18,6 +18,7 @@ import java.util.Set;
 public final class FakemonCardRegistry {
 
     private static final Set<String> WHITELISTED = new HashSet<>();
+    private static long revision;
 
     private FakemonCardRegistry() {}
 
@@ -29,6 +30,7 @@ public final class FakemonCardRegistry {
                 WHITELISTED.add(id.trim().toLowerCase());
             }
         }
+        revision++;
         CobblemonCards.LOGGER.info(
                 "[CobblemonCards] Fakemon whitelist reloaded - {} species whitelisted.", WHITELISTED.size());
     }
@@ -45,5 +47,10 @@ public final class FakemonCardRegistry {
     /** Unmodifiable view of the current whitelist (useful for logging/commands). */
     public static Set<String> getWhitelistedIds() {
         return Collections.unmodifiableSet(WHITELISTED);
+    }
+
+    /** Monotonic revision used to invalidate derived caches after every datapack reload. */
+    public static synchronized long getRevision() {
+        return revision;
     }
 }

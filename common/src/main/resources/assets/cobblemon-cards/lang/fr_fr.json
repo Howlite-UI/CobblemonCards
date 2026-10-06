@@ -446,7 +446,7 @@
   "cobblemon-cards.midnightconfig.shinyChanceStatMultiplier": "Multiplicateur du bonus chromatique",
   "cobblemon-cards.midnightconfig.shinyChanceStatMultiplier.tooltip": "Se cumule avec les multiplicateurs global et de dresseur pour les bonus de chance chromatique.",
   "cobblemon-cards.midnightconfig.allowFakemonCards": "Autoriser les cartes de Fakemon",
-  "cobblemon-cards.midnightconfig.allowFakemonCards.tooltip": "Autorise les cartes de Pokémon ajoutés dont le numéro du Pokédex national est hors de l’intervalle 1–1025.",
+  "cobblemon-cards.midnightconfig.allowFakemonCards.tooltip": "Autorise les cartes de toutes les espèces enregistrées par des addons Cobblemon. Si désactivé, un datapack peut tout de même autoriser des espèces individuellement.",
   "cobblemon-cards.midnightconfig.category.general": "Général",
   "cobblemon-cards.midnightconfig.category.player": "Joueur",
   "cobblemon-cards.midnightconfig.category.spawning": "Rencontres",

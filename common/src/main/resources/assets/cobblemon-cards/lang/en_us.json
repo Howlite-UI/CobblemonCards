@@ -453,7 +453,7 @@
   "cobblemon-cards.midnightconfig.shinyChanceStatMultiplier": "Shiny chance bonus multiplier",
   "cobblemon-cards.midnightconfig.shinyChanceStatMultiplier.tooltip": "Multiplier specific to shiny chance bonuses, applied together with the global and trainer multipliers.",
   "cobblemon-cards.midnightconfig.allowFakemonCards": "Allow Fakemon cards",
-  "cobblemon-cards.midnightconfig.allowFakemonCards.tooltip": "Allows cards for addon Pokémon whose National Pokédex number is outside 1–1025.",
+  "cobblemon-cards.midnightconfig.allowFakemonCards.tooltip": "Allows cards for every species registered by Cobblemon addons. When disabled, individual species can still be authorized by a datapack whitelist.",
   "cobblemon-cards.midnightconfig.category.general": "General",
   "cobblemon-cards.midnightconfig.category.player": "Player",
   "cobblemon-cards.midnightconfig.category.spawning": "Spawning",

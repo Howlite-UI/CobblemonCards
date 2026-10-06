@@ -28,16 +28,21 @@ import java.util.Set;
  *   "species": ["myfakemon", "anotherfakemon"]
  * }
  * }</pre>
- * When {@code replace} is {@code true}, entries from lower-priority packs are
- * cleared before adding entries from this file (same semantics as vanilla recipes).
+ * When {@code replace} is {@code true}, entries collected before this file are
+ * cleared. Integration packs should normally keep it {@code false} so several
+ * addons can contribute species safely.
  *
  * <h3>Resource-pack sprites</h3>
- * Place card textures at:
+ * The datapack only authorizes the species on the server. Each client must also
+ * enable a resource pack containing the card textures at:
  * <pre>
- *   assets/cobblemon-cards/textures/item/cards/pokemon/regular/{species_name}.png  (40x30)
- *   assets/cobblemon-cards/textures/item/cards/pokemon/shiny/{species_name}.png    (40x30, optional)
+ *   assets/cobblemon-cards/textures/item/cards/pokemon/regular/{species_name}.png
+ *   assets/cobblemon-cards/textures/item/cards/pokemon/shiny/{species_name}.png
  * </pre>
- * The card renderer already checks these paths automatically.
+ * Textures are 48x32 PNGs: draw inside the top-left 40x30 area and leave the
+ * rightmost 8 pixels and bottom 2 pixels transparent. The card renderer crops
+ * that padded texture automatically. Supplying both normal and shiny sprites is
+ * recommended; a missing variant uses the corresponding Substitute fallback.
  */
 public final class FakemonWhitelistReloader {
 

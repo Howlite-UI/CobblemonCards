@@ -33,7 +33,7 @@ This prerelease targets **Minecraft 1.21.1**, **Java 21**, and **Cobblemon 1.8.1
 - **Spawn weighting**: equipped cards influence eligible Pokémon spawns while respecting Cobblemon's biome and spawn-bucket rules.
 - **Updated dependencies**: both loaders use Accessories for equipped binders, with matching owo-lib and Kotlin runtimes.
 
-[Read the V2 guide](docs/V2_GUIDE.md) · [Full changelog](CHANGELOG.md)
+[Read the V2 guide](docs/V2_GUIDE.md) · [Custom Fakemon sprites](docs/CUSTOM_FAKEMON_SPRITES.md) · [Full changelog](CHANGELOG.md)
 
 The automated builds and targeted checks pass. Dedicated-server multiplayer, upgrades of existing worlds, and large-collection performance still need playtesting before the stable V2 release.
 
@@ -51,6 +51,7 @@ The automated builds and targeted checks pass. Dedicated-server multiplayer, upg
 * **Multiple Rarity Tiers**: *Common*, *Uncommon*, *Rare*, *Epic*, *Legendary*, and *Mythic*.
 * **Visual Variants**: Normal cards and full-art **Shiny** (Chromatiques) variants with custom visual models.
 * **Special Forms**: Complete integration of Regional variants (Alola, Galar, Hisui) and Mega Evolutions.
+* **Fakemon Integration**: Add card drops, booster eligibility, and normal/shiny sprites for addon species with the included [datapack and resource-pack template](templates/fakemon-card-integration/README.md).
 
 ### ✨ Dynamic Holographic Shaders & Visual Effects
 Witness over **20 unique procedural holographic effects** powered by custom shaders that glisten and shift as you look around:

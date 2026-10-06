@@ -28,9 +28,9 @@ public class CobblemonCardsConfig extends MidnightConfig {
     public static float godPackTicketChance = 1.0f;
 
     /**
-     * When false (default), species whose National Pokédex number is outside [1, 1025]
-     * (i.e. Fakemon added by addon mods) are excluded from card drops and booster packs.
-     * Set to true to allow cards for any registered Cobblemon species.
+     * When false (default), species outside Cobblemon's own namespace are excluded from card drops
+     * and booster packs unless a datapack explicitly whitelists their internal species name.
+     * Set to true to allow cards for every registered Cobblemon addon species.
      */
     @Entry(category = "general")
     public static boolean allowFakemonCards = false;

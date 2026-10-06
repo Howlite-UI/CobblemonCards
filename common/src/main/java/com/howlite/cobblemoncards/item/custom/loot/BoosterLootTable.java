@@ -25,9 +25,8 @@ public class BoosterLootTable {
     // Tracks the last allowFakemonCards value used to build the cache.
     // If the config changes, the cache is automatically invalidated.
     private static boolean cachedAllowFakemon = false;
-    // Tracks the whitelist size at cache build time. If the whitelist changes
-    // (datapack reload), the cache is also invalidated automatically.
-    private static int cachedWhitelistSize = -1;
+    // Tracks datapack reloads, including replacements that keep the same list size.
+    private static long cachedWhitelistRevision = -1;
 
     /**
      * Récupère la liste des IDs de Pokémon disponibles.
@@ -36,19 +35,19 @@ public class BoosterLootTable {
      */
     public static List<String> getPokemonIds() {
         // Auto-invalidate if the config option or the datapack whitelist changed.
-        int currentWhitelistSize = FakemonCardRegistry.getWhitelistedIds().size();
+        long currentWhitelistRevision = FakemonCardRegistry.getRevision();
         if (cachedPokemonIds != null
                 && (cachedAllowFakemon != CobblemonCardsConfig.allowFakemonCards
-                    || cachedWhitelistSize != currentWhitelistSize)) {
+                    || cachedWhitelistRevision != currentWhitelistRevision)) {
             CobblemonCards.LOGGER.info(
-                    "[CobblemonCards] Species cache invalidated (allowFakemon={}, whitelistSize={}).",
-                    CobblemonCardsConfig.allowFakemonCards, currentWhitelistSize);
+                    "[CobblemonCards] Species cache invalidated (allowFakemon={}, whitelistRevision={}).",
+                    CobblemonCardsConfig.allowFakemonCards, currentWhitelistRevision);
             invalidateCache();
         }
 
         if (cachedPokemonIds == null || cachedPokemonIds.isEmpty()) {
             cachedAllowFakemon = CobblemonCardsConfig.allowFakemonCards;
-            cachedWhitelistSize = FakemonCardRegistry.getWhitelistedIds().size();
+            cachedWhitelistRevision = currentWhitelistRevision;
             try {
                 List<String> loadedIds = PokemonSpecies.getImplemented().stream()
                         .filter(species -> {
@@ -67,7 +66,8 @@ public class BoosterLootTable {
                     cachedPokemonIds = loadedIds;
                     CobblemonCards.LOGGER.info(
                             "[CobblemonCards] Liste dynamique chargée : {} espèces disponibles (allowFakemon={}, whitelist={}).",
-                            cachedPokemonIds.size(), CobblemonCardsConfig.allowFakemonCards, cachedWhitelistSize);
+                            cachedPokemonIds.size(), CobblemonCardsConfig.allowFakemonCards,
+                            FakemonCardRegistry.getWhitelistedIds().size());
                 } else {
                     // Si la liste est vide (chargement trop précoce), on retourne une liste temporaire de secours sans la mettre en cache définitivement
                     return List.of("pikachu", "charizard", "mewtwo", "lucario", "greninja", "gengar", "eevee", "bulbasaur", "squirtle", "rayquaza");

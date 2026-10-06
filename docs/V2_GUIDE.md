@@ -114,6 +114,8 @@ Use MidnightLib's in-game configuration screen, or edit `config/cobblemon-cards.
 
 If cards show zero bonuses, check `enableCardStats`, the relevant stat-family toggle, and its multipliers in the configuration for the loader you are using. Fabric and NeoForge development runs use separate config folders. Re-enabling bonuses does not reroll the type already stored on an old card.
 
+Custom species from Cobblemon addons can be authorized individually and given card sprites. This requires a server datapack plus a client resource pack; follow the [custom Fakemon sprite guide](CUSTOM_FAKEMON_SPRITES.md) or copy the [ready-made template](../templates/fakemon-card-integration/README.md).
+
 ## Beta validation
 
 Both loader builds and packaged metadata/resources were checked during the migration. Targeted headless checks passed for restoration (38 checks) and the Cobblemon 1.8.1 shiny event (15 checks). A full multiplayer session, existing-world upgrade playtests, and large-collection performance checks remain pending before a stable V2 release.

@@ -1,6 +1,7 @@
-﻿{
-  "_comment": "Template for modpack makers — copy this file into YOUR datapack at data/cobblemon-cards/fakemon_cards/your_mod_name.json",
-  "_comment2": "Sprites must be added via resource pack at assets/cobblemon-cards/textures/item/cards/pokemon/regular/{species_name}.png (40x30px)",
+{
+  "_comment": "Copy this file into your datapack at data/cobblemon-cards/fakemon_cards/your_pack.json and list the internal species names in lowercase.",
+  "_comment2": "Sprites are a separate client resource pack: use 48x32 PNGs under assets/cobblemon-cards/textures/item/cards/pokemon/regular and shiny.",
+  "_guide": "See docs/CUSTOM_FAKEMON_SPRITES.md and templates/fakemon-card-integration in the Cobblemon Cards repository.",
   "replace": false,
   "species": []
 }
