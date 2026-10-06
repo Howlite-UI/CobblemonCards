@@ -1,7 +1,7 @@
 plugins {
     id 'maven-publish'
     id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
-    id 'net.neoforged.moddev' version '1.0.21' apply false
+    id 'net.neoforged.moddev' version "${moddev_version}" apply false
     id 'org.jetbrains.kotlin.jvm' version "${kotlin_version}" apply false
 }
 
@@ -18,10 +18,8 @@ allprojects {
         maven { url "https://maven.architectury.dev/" }
         maven { url "https://maven.shedaniel.me/" }
         maven { url "https://maven.terraformersmc.com/" }
-        maven { url "https://maven.ladysnake.org/releases" } // Pour Cardinal Components
         maven { url "https://maven.blamejared.com" }          // JEI
         maven { url "https://maven.wispforest.io/releases" }  // Accessories
-        maven { url "https://maven.su5ed.dev/releases" }      // Forgified Fabric API (Sinytra)
         maven { url "https://thedarkcolour.github.io/KotlinForForge/" } // Kotlin for Forge/NeoForge
     }
 }
@@ -33,9 +31,20 @@ subprojects {
         }
 
         java {
+            toolchain.languageVersion = JavaLanguageVersion.of(21)
             withSourcesJar()
             sourceCompatibility = JavaVersion.VERSION_21
             targetCompatibility = JavaVersion.VERSION_21
         }
+
+        tasks.withType(JavaExec).configureEach {
+            javaLauncher = javaToolchains.launcherFor {
+                languageVersion = JavaLanguageVersion.of(21)
+            }
+        }
+    }
+
+    plugins.withId('org.jetbrains.kotlin.jvm') {
+        kotlin.jvmToolchain(21)
     }
 }

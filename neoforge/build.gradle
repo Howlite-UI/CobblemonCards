@@ -1,5 +1,5 @@
 plugins {
-    id 'net.neoforged.moddev' version '1.0.21'
+    id 'net.neoforged.moddev'
     id 'maven-publish'
     id 'org.jetbrains.kotlin.jvm'
 }
@@ -7,7 +7,12 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
+base {
+    archivesName = "cobblemon-cards-neoforge"
+}
+
 evaluationDependsOn(':common')
+def commonProject = project(':common')
 
 neoForge {
     version = project.neoforge_version
@@ -31,8 +36,8 @@ neoForge {
     mods {
         "cobblemon_cards" {
             sourceSet sourceSets.main
-            sourceSet project(':common').sourceSets.main
-            sourceSet project(':common').sourceSets.client
+            sourceSet commonProject.sourceSets.main
+            sourceSet commonProject.sourceSets.client
         }
     }
 }
@@ -42,8 +47,8 @@ dependencies {
         exclude group: "net.fabricmc"
         exclude group: "net.fabricmc.fabric-api"
     }
-    implementation project(':common').sourceSets.client.output
-    implementation "thedarkcolour:kotlinforforge-neoforge:5.11.0"
+    implementation commonProject.sourceSets.client.output
+    implementation "thedarkcolour:kotlinforforge-neoforge:${project.kotlin_for_forge_version}"
 
     // Cobblemon NeoForge
     implementation "maven.modrinth:cobblemon:${project.neoforge_cobblemon_version}"
@@ -51,7 +56,12 @@ dependencies {
     implementation "me.shedaniel.cloth:cloth-config-neoforge:${project.cloth_config_version}"
 
     // Accessories API (NeoForge version)
-    implementation "io.wispforest:accessories-neoforge:${project.accessories_version}"
+    implementation("io.wispforest:accessories-neoforge:${project.accessories_version}") {
+        // owo-lib bundles the matching Endec and Forgified Fabric API libraries.
+        // Avoid the older copies from Accessories' Maven metadata on the runtime classpath.
+        transitive = false
+    }
+    implementation "maven.modrinth:owo-lib:${project.neoforge_owo_modrinth_version}"
 
     // MidnightLib (NeoForge version)
     implementation "maven.modrinth:midnightlib:${project.neoforge_midnightlib_version}"
@@ -64,7 +74,16 @@ dependencies {
 
 processResources {
     var replaceProperties = [
-            version: project.version
+            version: project.version,
+            minecraft_version: project.minecraft_version,
+            neoforge_version: project.neoforge_version,
+            cobblemon_version: project.cobblemon_version,
+            kotlin_for_forge_version: project.kotlin_for_forge_version,
+            accessories_version: project.accessories_version,
+            owo_version: project.neoforge_owo_version,
+            architectury_version: project.architectury_version,
+            cloth_config_version: project.cloth_config_version,
+            midnightlib_version: project.neoforge_midnightlib_version.tokenize('+')[0]
     ]
     inputs.properties replaceProperties
 
@@ -73,8 +92,8 @@ processResources {
     }
 
     // Copy resources from common
-    from project(':common').sourceSets.main.resources
-    from project(':common').sourceSets.client.resources
+    from commonProject.sourceSets.main.resources
+    from commonProject.sourceSets.client.resources
 }
 
 tasks.named('jar', Jar) {
@@ -84,14 +103,14 @@ tasks.named('jar', Jar) {
             "MixinConfigs": "cobblemon-cards.mixins.json"
         ])
     }
-    from project(':common').sourceSets.main.output
-    from project(':common').sourceSets.client.output
+    from commonProject.sourceSets.main.output
+    from commonProject.sourceSets.client.output
 }
 
 tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from project(':common').sourceSets.main.allSource
-    from project(':common').sourceSets.client.allSource
+    from commonProject.sourceSets.main.allSource
+    from commonProject.sourceSets.client.allSource
 }
 
 

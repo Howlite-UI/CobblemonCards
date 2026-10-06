@@ -23,8 +23,7 @@ dependencies {
     // MidnightLib (CompileOnly)
     modCompileOnly "maven.modrinth:midnightlib:${project.midnightlib_version}"
 
-    // Trinkets & Accessories (CompileOnly)
-    modCompileOnly "dev.emi:trinkets:${project.trinkets_version}"
+    // Accessories API (shared by Fabric and NeoForge)
     modCompileOnly "io.wispforest:accessories-common:${project.accessories_version}"
 
     // Recipe Viewer APIs (CompileOnly)

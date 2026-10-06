@@ -11,7 +11,12 @@ repositories {
 version = project.mod_version
 group = project.maven_group
 
+base {
+    archivesName = "cobblemon-cards-fabric"
+}
+
 evaluationDependsOn(':common')
+def commonProject = project(':common')
 
 loom {
     splitEnvironmentSourceSets()
@@ -28,9 +33,15 @@ loom {
         "cobblemon-cards" {
             sourceSet sourceSets.main
             sourceSet sourceSets.client
-            sourceSet project(':common').sourceSets.main
-            sourceSet project(':common').sourceSets.client
+            sourceSet commonProject.sourceSets.main
+            sourceSet commonProject.sourceSets.client
         }
+    }
+}
+
+configurations {
+    cobblemonServerRuntime {
+        canBeConsumed = false
     }
 }
 
@@ -45,15 +56,25 @@ dependencies {
     // Include and implement common project
     implementation project(path: ":common", configuration: "namedElements")
     include project(":common")
-    clientImplementation project(':common').sourceSets.client.output
+    clientImplementation commonProject.sourceSets.client.output
 
     // Cobblemon & dependencies
     modImplementation "maven.modrinth:cobblemon:${project.fabric_cobblemon_version}"
+    // Loom omits Cobblemon's nested libraries from development runs.
+    // Match the GraalJS and MongoDB versions bundled by Cobblemon 1.8.1.
+    modRuntimeOnly "org.graalvm.js:js:${project.cobblemon_graal_version}"
+    modRuntimeOnly "org.graalvm.sdk:graal-sdk:${project.cobblemon_graal_version}"
+    modRuntimeOnly "org.graalvm.regex:regex:${project.cobblemon_graal_version}"
+    modRuntimeOnly "org.graalvm.truffle:truffle-api:${project.cobblemon_graal_version}"
+    modRuntimeOnly "com.ibm.icu:icu4j:${project.cobblemon_icu_version}"
+    cobblemonServerRuntime "com.ibm.icu:icu4j:${project.cobblemon_icu_version}"
+    runtimeOnly "org.mongodb:mongodb-driver-sync:${project.cobblemon_mongodb_version}"
     modImplementation "dev.architectury:architectury-fabric:${project.architectury_version}"
     modImplementation "me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}"
 
     // Accessories API (Fabric version — même API que NeoForge via Wisp Forest)
     modImplementation "io.wispforest:accessories-fabric:${project.accessories_version}"
+    modImplementation "io.wispforest:owo-lib:${project.fabric_owo_version}"
 
     // MidnightLib (Fabric version)
     modImplementation "maven.modrinth:midnightlib:${project.midnightlib_version}"
@@ -65,16 +86,35 @@ dependencies {
     modCompileOnly "dev.emi:emi-fabric:${project.emi_version}:api"
 }
 
+// Loom filters Minecraft's client libraries from server runs, including ICU used by GraalJS.
+// Add Cobblemon's matching ICU directly after that filtering step.
+tasks.named('runServer', JavaExec) {
+    classpath configurations.cobblemonServerRuntime
+}
+
 processResources {
-    inputs.property "version", project.version
+    var replaceProperties = [
+            version: project.version,
+            minecraft_version: project.minecraft_version,
+            loader_version: project.loader_version,
+            fabric_api_version: project.fabric_api_version,
+            fabric_kotlin_version: project.fabric_kotlin_version,
+            cobblemon_version: project.cobblemon_version,
+            accessories_version: project.accessories_version,
+            owo_version: project.fabric_owo_version,
+            architectury_version: project.architectury_version,
+            cloth_config_version: project.cloth_config_version,
+            midnightlib_version: project.midnightlib_version.tokenize('+')[0]
+    ]
+    inputs.properties replaceProperties
 
     filesMatching("fabric.mod.json") {
-        expand "version": inputs.properties.version
+        expand replaceProperties
     }
 
     // Include resources from common project
-    from project(':common').sourceSets.main.resources
-    from project(':common').sourceSets.client.resources
+    from commonProject.sourceSets.main.resources
+    from commonProject.sourceSets.client.resources
 }
 
 
