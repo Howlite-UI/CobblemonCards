@@ -197,8 +197,15 @@ public class BinderMenu extends AbstractContainerMenu {
     public void removed(Player player) {
         super.removed(player);
         if (!player.level().isClientSide()) {
-            List<ItemStack> items = new ArrayList<>();
-            for (int i = 0; i < binderContainer.getContainerSize(); i++) {
+            int lastNonEmpty = -1;
+            for (int i = binderContainer.getContainerSize() - 1; i >= 0; i--) {
+                if (!this.binderContainer.getItem(i).isEmpty()) {
+                    lastNonEmpty = i;
+                    break;
+                }
+            }
+            List<ItemStack> items = new ArrayList<>(lastNonEmpty + 1);
+            for (int i = 0; i <= lastNonEmpty; i++) {
                 items.add(this.binderContainer.getItem(i));
             }
             // Save to the unlimited BINDER_CONTENTS component.

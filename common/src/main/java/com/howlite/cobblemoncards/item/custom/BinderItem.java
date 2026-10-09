@@ -85,27 +85,29 @@ public class BinderItem extends Item {
         // Affichage du nombre de pages
         tooltipComponents.add(Component.translatable("gui.cobblemon-cards.binder.pages", tier.getPages()).withStyle(ChatFormatting.GRAY));
 
-        // Shared reader: BINDER_CONTENTS with a fallback to vanilla CONTAINER for unmigrated saves.
-        Map<CardStat, Float> statTotals = com.howlite.cobblemoncards.util.CardStatUtil.collectStats(stack);
+        if (com.howlite.cobblemoncards.CobblemonCardsConfig.enableCardStats) {
+            // Shared reader: BINDER_CONTENTS with a fallback to vanilla CONTAINER for unmigrated saves.
+            Map<CardStat, Float> statTotals = com.howlite.cobblemoncards.util.CardStatUtil.collectStats(stack);
 
-        boolean hasHeader = false;
-        for (Map.Entry<CardStat, Float> entry : statTotals.entrySet()) {
-            CardStat stat = entry.getKey();
-            float totalValue = entry.getValue();
+            boolean hasHeader = false;
+            for (Map.Entry<CardStat, Float> entry : statTotals.entrySet()) {
+                CardStat stat = entry.getKey();
+                float totalValue = entry.getValue();
 
-            if (getVanillaAttribute(stat) == null && totalValue > 0) {
-                if (!hasHeader) {
-                    tooltipComponents.add(Component.empty());
-                    tooltipComponents.add(Component.translatable("gui.cobblemon-cards.binder.stats_bonus").withStyle(ChatFormatting.GRAY));
-                    hasHeader = true;
+                if (getVanillaAttribute(stat) == null && totalValue > 0) {
+                    float finalValue = com.howlite.cobblemoncards.util.CardStatUtil.getEffectiveValue(stat, totalValue);
+                    if (finalValue <= 0) continue;
+
+                    if (!hasHeader) {
+                        tooltipComponents.add(Component.empty());
+                        tooltipComponents.add(Component.translatable("gui.cobblemon-cards.binder.stats_bonus").withStyle(ChatFormatting.GRAY));
+                        hasHeader = true;
+                    }
+
+                    String formattedValue = com.howlite.cobblemoncards.util.CardStatUtil.formatValue(stat, totalValue);
+                    tooltipComponents.add(Component.literal(formattedValue + " ").append(stat.getTranslatedName())
+                            .withStyle(ChatFormatting.AQUA));
                 }
-
-                float finalValue = com.howlite.cobblemoncards.util.CardStatUtil.getEffectiveValue(stat, totalValue);
-                if (finalValue <= 0) continue;
-                String formattedValue = com.howlite.cobblemoncards.util.CardStatUtil.formatValue(stat, totalValue);
-
-                tooltipComponents.add(Component.literal(formattedValue + " ").append(stat.getTranslatedName())
-                        .withStyle(ChatFormatting.AQUA));
             }
         }
 

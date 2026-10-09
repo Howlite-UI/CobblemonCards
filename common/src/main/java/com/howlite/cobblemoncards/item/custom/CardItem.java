@@ -78,41 +78,51 @@ public class CardItem extends Item {
                     tooltipComponents.add(Component.literal("─────────────────").withStyle(ChatFormatting.DARK_GRAY));
                     tooltipComponents.add(Component.translatable("tooltip.cobblemon-cards.cosmetic_card")
                             .withStyle(ChatFormatting.LIGHT_PURPLE));
+                    tooltipComponents.add(Component.empty());
                 } else {
                     // 1. Statistique (mise en avant avec couleur de rareté)
-                    // Le format dépend du mode d'application du stat (valeur plate vs pourcentage).
-                    String formattedValue = com.howlite.cobblemoncards.CobblemonCardsConfig.displayPercentStatOnCards
-                            ? com.howlite.cobblemoncards.util.CardStatUtil.formatValue(data.stat(), data.statValue())
-                            : String.valueOf(data.statValue());
+                    boolean hasMainStat = com.howlite.cobblemoncards.CobblemonCardsConfig.enableCardStats
+                            && data.stat() != null
+                            && com.howlite.cobblemoncards.util.CardStatUtil.getEffectiveValue(data.stat(), data.statValue()) > 0f;
+                    boolean hasTrainerStat = com.howlite.cobblemoncards.CobblemonCardsConfig.enableCardStats
+                            && data.trainerStat() != null && data.trainerStat().isPresent()
+                            && data.trainerStatValue() != null && data.trainerStatValue().isPresent()
+                            && com.howlite.cobblemoncards.util.CardStatUtil.getEffectiveValue(data.trainerStat().get(), data.trainerStatValue().get()) > 0f;
 
                     // Séparateur décoratif supérieur
                     tooltipComponents.add(Component.literal("─────────────────").withStyle(ChatFormatting.DARK_GRAY));
 
-                    tooltipComponents.add(
-                        Component.literal("  " + formattedValue + " ")
-                            .withStyle(Style.EMPTY.withColor(rarityColor).withBold(true))
-                            .append(data.stat().getTranslatedName()
-                                .copy().withStyle(Style.EMPTY.withColor(rarityColor).withBold(false)))
-                    );
+                    if (hasMainStat || hasTrainerStat) {
+                        if (hasMainStat) {
+                            String formattedValue = com.howlite.cobblemoncards.CobblemonCardsConfig.displayPercentStatOnCards
+                                    ? com.howlite.cobblemoncards.util.CardStatUtil.formatValue(data.stat(), data.statValue())
+                                    : String.valueOf(data.statValue());
 
-                    // Bonus secondaire de dresseur (si présent)
-                    if (data.trainerStat() != null && data.trainerStat().isPresent()
-                            && data.trainerStatValue() != null && data.trainerStatValue().isPresent()) {
-                        CardStat tStat = data.trainerStat().get();
-                        float tVal = data.trainerStatValue().get();
-                        String formattedTValue = com.howlite.cobblemoncards.CobblemonCardsConfig.displayPercentStatOnCards
-                                ? com.howlite.cobblemoncards.util.CardStatUtil.formatValue(tStat, tVal)
-                                : String.valueOf(tVal);
-                        tooltipComponents.add(
-                            Component.literal("  ★ " + formattedTValue + " ")
-                                .withStyle(Style.EMPTY.withColor(ChatFormatting.GOLD).withBold(true))
-                                .append(tStat.getTranslatedName()
-                                    .copy().withStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW).withBold(false)))
-                        );
+                            tooltipComponents.add(
+                                Component.literal("  " + formattedValue + " ")
+                                    .withStyle(Style.EMPTY.withColor(rarityColor).withBold(true))
+                                    .append(data.stat().getTranslatedName()
+                                        .copy().withStyle(Style.EMPTY.withColor(rarityColor).withBold(false)))
+                            );
+                        }
+
+                        if (hasTrainerStat) {
+                            CardStat tStat = data.trainerStat().get();
+                            float tVal = data.trainerStatValue().get();
+                            String formattedTValue = com.howlite.cobblemoncards.CobblemonCardsConfig.displayPercentStatOnCards
+                                    ? com.howlite.cobblemoncards.util.CardStatUtil.formatValue(tStat, tVal)
+                                    : String.valueOf(tVal);
+                            tooltipComponents.add(
+                                Component.literal("  ★ " + formattedTValue + " ")
+                                    .withStyle(Style.EMPTY.withColor(ChatFormatting.GOLD).withBold(true))
+                                    .append(tStat.getTranslatedName()
+                                        .copy().withStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW).withBold(false)))
+                            );
+                        }
+
+                        tooltipComponents.add(Component.empty());
                     }
                 }
-
-                tooltipComponents.add(Component.empty());
 
                 // 2. Pokémon (Label + Valeur WHITE)
                 tooltipComponents.add(

@@ -201,10 +201,23 @@ public class BinderScreen extends AbstractContainerScreen<BinderMenu> {
         this.isRendering = false;
 
         this.hoveredSlot = null;
-        for (Slot slot : this.menu.slots) {
-            if (slot.isActive() && this.isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY)) {
+        int activeStart = this.menu.getCurrentPage() * BinderMenu.SLOTS_PER_PAGE;
+        int activeEnd = Math.min(activeStart + BinderMenu.SLOTS_PER_PAGE, this.menu.slots.size());
+        for (int i = activeStart; i < activeEnd; i++) {
+            Slot slot = this.menu.slots.get(i);
+            if (slot.isActive() && this.isHovering(slot.x - CARD_OFFSET_X, slot.y - CARD_OFFSET_Y, CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, mouseX, mouseY)) {
                 this.hoveredSlot = slot;
                 break;
+            }
+        }
+        if (this.hoveredSlot == null) {
+            int totalBinderSlots = this.menu.getMaxPages() * BinderMenu.SLOTS_PER_PAGE;
+            for (int i = totalBinderSlots; i < this.menu.slots.size(); i++) {
+                Slot slot = this.menu.slots.get(i);
+                if (slot.isActive() && this.isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY)) {
+                    this.hoveredSlot = slot;
+                    break;
+                }
             }
         }
 
@@ -212,6 +225,10 @@ public class BinderScreen extends AbstractContainerScreen<BinderMenu> {
             int x = this.leftPos + this.hoveredSlot.x - CARD_OFFSET_X;
             int y = this.topPos + this.hoveredSlot.y - CARD_OFFSET_Y;
             graphics.fill(x, y, x + CARD_SLOT_WIDTH, y + CARD_SLOT_HEIGHT, -2130706433);
+        } else if (this.hoveredSlot != null) {
+            int x = this.leftPos + this.hoveredSlot.x;
+            int y = this.topPos + this.hoveredSlot.y;
+            graphics.fill(x, y, x + 16, y + 16, -2130706433);
         }
 
         this.renderTooltip(graphics, mouseX, mouseY);
@@ -223,8 +240,11 @@ public class BinderScreen extends AbstractContainerScreen<BinderMenu> {
             return false;
         }
         if (width == 16 && height == 16) {
-            for (Slot slot : this.menu.slots) {
-                if (slot.isActive() && slot.x == x && slot.y == y && slot.index < this.menu.getMaxPages() * BinderMenu.SLOTS_PER_PAGE) {
+            int activeStart = this.menu.getCurrentPage() * BinderMenu.SLOTS_PER_PAGE;
+            int activeEnd = Math.min(activeStart + BinderMenu.SLOTS_PER_PAGE, this.menu.slots.size());
+            for (int i = activeStart; i < activeEnd; i++) {
+                Slot slot = this.menu.slots.get(i);
+                if (slot.x == x && slot.y == y) {
                     return super.isHovering(x - CARD_OFFSET_X, y - CARD_OFFSET_Y, CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, mouseX, mouseY);
                 }
             }
