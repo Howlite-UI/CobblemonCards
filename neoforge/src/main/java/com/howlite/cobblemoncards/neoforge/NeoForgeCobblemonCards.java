@@ -11,6 +11,8 @@ import com.howlite.cobblemoncards.command.GiveCardCommand;
 import com.howlite.cobblemoncards.component.CardData;
 import com.howlite.cobblemoncards.component.CardStat;
 import com.howlite.cobblemoncards.component.ModDataComponents;
+import com.howlite.cobblemoncards.compat.CompatBoosterLootEntry;
+import com.howlite.cobblemoncards.compat.CompatManager;
 import com.howlite.cobblemoncards.event.BinderSpawnModifier;
 import com.howlite.cobblemoncards.event.ModEvents;
 import com.howlite.cobblemoncards.item.ModCreativeTabs;
@@ -24,6 +26,7 @@ import com.howlite.cobblemoncards.menu.CardRestorerMenu;
 import com.howlite.cobblemoncards.menu.ModMenuTypes;
 import com.howlite.cobblemoncards.network.*;
 import com.howlite.cobblemoncards.neoforge.attachment.NeoForgePlayerDataAttachments;
+import com.howlite.cobblemoncards.neoforge.compat.NeoForgeLootCompat;
 import com.howlite.cobblemoncards.neoforge.client.NeoForgeCobblemonCardsClient;
 import com.howlite.cobblemoncards.neoforge.client.NeoForgePacketHandlerClient;
 import com.howlite.cobblemoncards.util.PlatformHelper;
@@ -69,6 +72,7 @@ public class NeoForgeCobblemonCards {
 
         // 2. Enregistrer le registre d'attachements NeoForge
         NeoForgePlayerDataAttachments.ATTACHMENT_TYPES.register(modEventBus);
+        NeoForgeLootCompat.register(modEventBus);
 
         // 3. Écouter les événements du bus de mod
         modEventBus.addListener(this::commonSetup);
@@ -90,6 +94,8 @@ public class NeoForgeCobblemonCards {
             eu.midnightdust.lib.config.MidnightConfig.init(CobblemonCards.MOD_ID, CobblemonCardsConfig.class);
             // Force the config file to be (re)written so newly added entries appear on disk
             eu.midnightdust.lib.config.MidnightConfig.write(CobblemonCards.MOD_ID);
+
+            CompatManager.initialize(net.neoforged.fml.ModList.get()::isLoaded);
 
             // Binder spawn boosts: hook into Cobblemon's per-player spawner weighting pipeline.
             BinderSpawnModifier.registerSpawnInfluence();
@@ -124,6 +130,8 @@ public class NeoForgeCobblemonCards {
             ModCreativeTabs.register();
         } else if (event.getRegistryKey().equals(Registries.SOUND_EVENT)) {
             com.howlite.cobblemoncards.sound.ModSounds.registerSounds();
+        } else if (event.getRegistryKey().equals(Registries.LOOT_POOL_ENTRY_TYPE)) {
+            CompatBoosterLootEntry.register();
         }
     }
 

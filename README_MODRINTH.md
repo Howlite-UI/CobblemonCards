@@ -29,7 +29,7 @@ This prerelease targets **Minecraft 1.21.1**, **Java 21**, and **Cobblemon 1.8.1
 
 - **Trainer bonuses**: cards can carry an additional Experience, Catch Rate, or Shiny Chance bonus while keeping their primary stat.
 - **Card Restorer**: higher target grades take longer; restoration continues after closing the GUI and saves its progress.
-- **Readable configuration**: six MidnightLib tabs with section headings, individual stat multipliers, and English/French tooltips.
+- **Readable configuration**: seven MidnightLib tabs with section headings, individual stat multipliers, and English/French tooltips.
 - **Spawn weighting**: equipped cards influence eligible Pokémon spawns while respecting Cobblemon's biome and spawn-bucket rules.
 - **Updated dependencies**: both loaders use Accessories for equipped binders, with matching owo-lib and Kotlin runtimes.
 
@@ -97,7 +97,7 @@ A **+600% Shiny Chance** bonus means **7× the base chance**. With Cobblemon's `
 
 Use **MidnightLib's configuration screen** or edit `config/cobblemon-cards.json` while the game/server is stopped. Mod Menu provides access to the configuration screen on Fabric. In multiplayer, gameplay values are read from the **server's configuration**; editing only the client's file does not change server gameplay.
 
-The menu groups settings into six tabs: **General**, **Player**, **Spawning**, **Trainer**, **Machines**, and **Binders**. Colored section headings and English/French tooltips explain related options. Existing configuration keys and values are preserved.
+The menu groups settings into seven tabs: **General**, **Player**, **Spawning**, **Trainer**, **Machines**, **Binders**, and **Compatibility**. Colored section headings and English/French tooltips explain related options. Existing configuration keys and values are preserved.
 
 These are the main settings; the in-game screen also exposes per-stat multipliers and binder capacities.
 
@@ -134,6 +134,12 @@ Removing or replacing the card cancels restoration. Removing required dust pause
 <p align="center">
   <img src="https://raw.githubusercontent.com/Howlite-UI/CobblemonCards/main/common/src/main/resources/assets/cobblemon-cards/textures/graphics/cobblemon_divider.png" alt="Divider" />
 </p>
+
+## Optional survival booster rewards
+
+With the supported optional addon installed, booster packs are added automatically to **Rustling Spots interactions**, **Raid Dens' Raid Pouches**, **CobbledGacha v.3 capsules**, and **Cobblemon Fishing Loot's Poke Rod item catches**. Normal reward processing is preserved, and each integration can be disabled independently in CobblemonCards' server configuration. None of these addons is required to use CobblemonCards.
+
+Defaults are **10% per consumed Rustling Spot interaction**, **5-50% by raid tier**, **1-5% by capsule rarity**, and independent fishing chances of **3% for Water boosters** and **1% for classic boosters**. Battle Tower, Expeditions, CobbleDollars and PokeLoot are investigated but currently unsupported automatically. See the [compatibility guide](https://github.com/Howlite-UI/CobblemonCards/blob/main/docs/OPTIONAL_INTEGRATIONS.md) for exact investigated versions, table IDs, configuration, limitations and the runtime testing checklist.
 
 ## 📦 Modpack Integration & Standalone Notice
 

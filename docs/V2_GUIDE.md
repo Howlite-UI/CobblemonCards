@@ -111,10 +111,13 @@ Use MidnightLib's in-game configuration screen, or edit `config/cobblemon-cards.
 | Trainer | Experience/catch/shiny multipliers, caps, and acquisition rules. |
 | Machines | Recycling, grading, restoration durations, and dust costs. |
 | Binders | Available tiers, page counts, and Master Album bonuses. |
+| Compatibility | Optional booster rewards for Rustling Spots, Raid Dens, CobbledGacha v.3, and Fishing Loot. |
 
 If cards show zero bonuses, check `enableCardStats`, the relevant stat-family toggle, and its multipliers in the configuration for the loader you are using. Fabric and NeoForge development runs use separate config folders. Re-enabling bonuses does not reroll the type already stored on an old card.
 
 Custom species from Cobblemon addons can be authorized individually and given card sprites. This requires a server datapack plus a client resource pack; follow the [custom Fakemon sprite guide](CUSTOM_FAKEMON_SPRITES.md) or copy the [ready-made template](../templates/fakemon-card-integration/README.md).
+
+Booster rewards activate automatically when a supported optional addon is installed. See the [optional integration guide](OPTIONAL_INTEGRATIONS.md) for verified versions, default chances, configuration and limitations.
 
 ## Beta validation
 

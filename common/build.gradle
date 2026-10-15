@@ -30,6 +30,9 @@ dependencies {
     modCompileOnly "mezz.jei:jei-1.21.1-fabric-api:${project.jei_version}"
     modCompileOnly "me.shedaniel:RoughlyEnoughItems-api-fabric:${project.rei_version}"
     modCompileOnly "dev.emi:emi-fabric:${project.emi_version}:api"
+
+    testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.4"
 }
 
 loom {
@@ -44,5 +47,12 @@ loom {
 tasks.named('jar', Jar) {
     exclude("assets/**")
     exclude("data/**")
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    // Include Loom's mapped compile-only libraries, including MidnightConfig's superclass.
+    // These tests exercise pure selection/configuration logic without launching Minecraft.
+    classpath += sourceSets.main.compileClasspath
 }
 

@@ -11,6 +11,8 @@ import com.howlite.cobblemoncards.command.GiveCardCommand;
 import com.howlite.cobblemoncards.component.CardData;
 import com.howlite.cobblemoncards.component.CardStat;
 import com.howlite.cobblemoncards.component.ModDataComponents;
+import com.howlite.cobblemoncards.compat.CompatManager;
+import com.howlite.cobblemoncards.fabric.compat.FabricLootCompat;
 import com.howlite.cobblemoncards.event.BinderSpawnModifier;
 import com.howlite.cobblemoncards.item.ModItems;
 import com.howlite.cobblemoncards.item.custom.loot.BoosterLootTable;
@@ -57,6 +59,9 @@ public class FabricCobblemonCards implements ModInitializer {
 
         // 2. Initialiser le mod commun
         CobblemonCards.init();
+
+        CompatManager.initialize(net.fabricmc.loader.api.FabricLoader.getInstance()::isModLoaded);
+        FabricLootCompat.register();
 
         // Enregistrer les Accessories pour les Binders et Albums
         if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("accessories")) {

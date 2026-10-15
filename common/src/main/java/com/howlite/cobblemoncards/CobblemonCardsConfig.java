@@ -2,6 +2,8 @@ package com.howlite.cobblemoncards;
 
 import com.howlite.cobblemoncards.component.CardStat;
 import eu.midnightdust.lib.config.MidnightConfig;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CobblemonCardsConfig extends MidnightConfig {
     // --- General ---
@@ -240,6 +242,72 @@ public class CobblemonCardsConfig extends MidnightConfig {
 
     @Entry(category = "binders", min = 1, max = 2000)
     public static int masterAlbumPages = 1000;
+
+    // --- Optional addon rewards (server configuration) ---
+
+    @Comment(centered = true, category = "compatibility")
+    public static String rustlingRewards;
+
+    @Entry(category = "compatibility")
+    public static boolean rustlingSpotsEnabled = true;
+
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double rustlingSpotsBoosterChance = 10.0;
+
+    /** Verified Rustling Spots family names, mapped to existing booster selectors. */
+    @Entry(category = "compatibility")
+    public static List<String> rustlingSpotsFamilyBoosters = new ArrayList<>(List.of(
+            "GRASS=grass", "WATER=water", "SNOW=ice", "CAVE=rock", "SAND=ground",
+            "NETHERFLAMME=fire", "SOULFLAME=ghost"));
+
+    @Comment(centered = true, category = "compatibility")
+    public static String raidRewards;
+
+    @Entry(category = "compatibility")
+    public static boolean raidDensEnabled = true;
+
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double raidDensTier1Chance = 5.0;
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double raidDensTier2Chance = 8.0;
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double raidDensTier3Chance = 15.0;
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double raidDensTier4Chance = 20.0;
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double raidDensTier5Chance = 30.0;
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double raidDensTier6Chance = 40.0;
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double raidDensTier7Chance = 50.0;
+
+    @Comment(centered = true, category = "compatibility")
+    public static String gachaRewards;
+
+    @Entry(category = "compatibility")
+    public static boolean cobbledGachaEnabled = true;
+
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double cobbledGachaPokeChance = 1.0;
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double cobbledGachaGreatChance = 2.0;
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double cobbledGachaUltraChance = 3.0;
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double cobbledGachaMasterChance = 4.0;
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double cobbledGachaCherishChance = 5.0;
+
+    @Comment(centered = true, category = "compatibility")
+    public static String fishingRewards;
+
+    @Entry(category = "compatibility")
+    public static boolean fishingLootEnabled = true;
+
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double fishingLootWaterChance = 3.0;
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double fishingLootClassicChance = 1.0;
 
     public static int getRestorerProcessTime(int targetGrade) {
         if (targetGrade < 2 || targetGrade > 10) return 0;

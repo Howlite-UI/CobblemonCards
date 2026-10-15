@@ -8,6 +8,7 @@ Changes by version. The V2 entry describes the prepared beta; it is not a stable
 
 ### Added
 
+- Optional server-side booster rewards for Rustling Spots 5.0.1, Raid Dens 0.13.2, CobbledGacha 3.0.3, and Fishing Loot 1.0.0, with independent MidnightLib settings and a [compatibility guide](docs/OPTIONAL_INTEGRATIONS.md). The addons remain optional; Battle Tower, Expeditions, CobbleDollars, and PokéLoot require further API support.
 - Additional **Experience**, **Catch Rate**, and **Shiny Chance** trainer bonuses without replacing a card's primary stat.
 - Trainer-bonus acquisition through high-grade grading/restoration and a configurable lucky chance on newly generated Legendary, Mythic, or Shiny cards.
 - Grade-dependent restoration durations: 3 seconds at target grade 2, 12 seconds at grade 5, and 27 seconds at grade 10 with the default settings.
