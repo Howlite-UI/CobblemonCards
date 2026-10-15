@@ -345,6 +345,9 @@ public class FabricCobblemonCards implements ModInitializer {
     private static boolean isChestLootTable(net.minecraft.resources.ResourceLocation location) {
         if (location == null) return false;
         String path = location.getPath().toLowerCase(java.util.Locale.ROOT);
-        return path.startsWith("chests/") || path.contains("/chests/") || path.endsWith("_chest") || path.contains("chest");
+        // Block drop tables (blocks/chest, blocks/trapped_chest, ...) must never match
+        if (path.startsWith("blocks/")) return false;
+        // But accept chest loot tables (chests/simple_dungeon, chests/village/village_weaponsmith, mymod:structures/chests/ruins, ...)
+        return path.startsWith("chests/") || path.contains("/chests/");
     }
 }
