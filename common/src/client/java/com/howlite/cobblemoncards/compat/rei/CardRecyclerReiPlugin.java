@@ -11,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
 /**
  * Plugin REI pour le mod Cobblemon Cards.
  * <p>
- * Chargé automatiquement par REI via l'entrypoint {@code "rei_client_plugin"} dans fabric.mod.json.
+ * Chargé par l'entrypoint {@code "rei_client"} sur Fabric et par un adaptateur annoté sur NeoForge.
  * Si REI n'est pas installé, cette classe n'est jamais chargée → aucun crash.
  */
 public class CardRecyclerReiPlugin implements REIClientPlugin {

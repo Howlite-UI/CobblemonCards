@@ -61,7 +61,7 @@ dependencies {
     // Cobblemon & dependencies
     modImplementation "maven.modrinth:cobblemon:${project.fabric_cobblemon_version}"
     // Loom omits Cobblemon's nested libraries from development runs.
-    // Match the GraalJS and MongoDB versions bundled by Cobblemon 1.8.1.
+    // Match the GraalJS and MongoDB versions bundled by the targeted Cobblemon release.
     modRuntimeOnly "org.graalvm.js:js:${project.cobblemon_graal_version}"
     modRuntimeOnly "org.graalvm.sdk:graal-sdk:${project.cobblemon_graal_version}"
     modRuntimeOnly "org.graalvm.regex:regex:${project.cobblemon_graal_version}"

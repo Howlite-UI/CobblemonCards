@@ -1,10 +1,14 @@
 # Cobblemon Cards V2 guide
 
-This guide describes **2.0.0-beta.1** for **Minecraft 1.21.1**, **Java 21**, and **Cobblemon 1.8.1** on Fabric and NeoForge. See [README.md](../README.md#-required-dependencies) for loader-specific dependencies and [CHANGELOG.md](../CHANGELOG.md) for the release notes.
+This guide describes **2.1.0** for **Minecraft 1.21.1**, **Java 21**, and **Cobblemon 1.8.2** on Fabric and NeoForge. See [README.md](../README.md#-required-dependencies) for loader-specific dependencies and [CHANGELOG.md](../CHANGELOG.md) for the release notes.
 
 ## Installation and upgrading
 
-Install the JAR matching your loader: `cobblemon-cards-fabric-2.0.0-beta.1.jar` or `cobblemon-cards-neoforge-2.0.0-beta.1.jar`. Fabric bundles MidnightLib; NeoForge requires its separate dependency. Both loaders require Accessories and the matching owo-lib runtime.
+Install the JAR matching your loader: `cobblemon-cards-fabric-2.1.0.jar` or `cobblemon-cards-neoforge-2.1.0.jar`. Fabric bundles MidnightLib; NeoForge requires its separate dependency. Both loaders require Accessories and the matching owo-lib runtime.
+
+For optional addon rewards on Cobblemon 1.8.2, use RCT API **0.16.2-beta** with Rad Gyms/RCT, GeckoLib **4.9.3** with CobbledGacha/Raid Dens, and Forge Config API Port **21.1.6** for RCT on Fabric. RCT API 0.16.2-beta fixes its compatibility with Cobblemon 1.8.2's Iron Ball item; replace older 0.16.1-beta installations. The [optional integration guide](OPTIONAL_INTEGRATIONS.md) lists loader-specific downloads and validation results.
+
+Parting Gifts **3.0.2 and 3.0.3** cannot start with Cobblemon 1.8.2 on either loader because they use a removed `ElementalType` constructor. Remove these addon JARs before upgrading; CobblemonCards rejects them with an incompatibility message. Its optional reward code is preserved pending an upstream fix; disabling the integration does not fix the addon's own incompatibility.
 
 When upgrading from 1.x, keep a backup of your world/configuration, replace the old addon JAR, and update Cobblemon and its other addons to compatible versions. Keep `config/cobblemon-cards.json`: existing values remain in effect, and new settings are added during startup. Existing cards keep their stored stats; loading a world does not reroll them. Older cards without additional trainer fields and binders using the legacy container component remain readable.
 
@@ -111,7 +115,7 @@ Use MidnightLib's in-game configuration screen, or edit `config/cobblemon-cards.
 | Trainer | Experience/catch/shiny multipliers, caps, and acquisition rules. |
 | Machines | Recycling, grading, restoration durations, and dust costs. |
 | Binders | Available tiers, page counts, and Master Album bonuses. |
-| Compatibility | Optional booster rewards for Rustling Spots, Raid Dens, CobbledGacha v.3, and Fishing Loot. |
+| Compatibility | Optional booster rewards for Rustling Spots, Raid Dens, CobbledGacha, Fishing Loot, Rad Gyms and RCT; Parting Gifts settings are preserved pending an upstream fix. |
 
 If cards show zero bonuses, check `enableCardStats`, the relevant stat-family toggle, and its multipliers in the configuration for the loader you are using. Fabric and NeoForge development runs use separate config folders. Re-enabling bonuses does not reroll the type already stored on an old card.
 
@@ -119,6 +123,8 @@ Custom species from Cobblemon addons can be authorized individually and given ca
 
 Booster rewards activate automatically when a supported optional addon is installed. See the [optional integration guide](OPTIONAL_INTEGRATIONS.md) for verified versions, default chances, configuration and limitations.
 
-## Beta validation
+## Release validation
 
-Both loader builds and packaged metadata/resources were checked during the migration. Targeted headless checks passed for restoration (38 checks) and the Cobblemon 1.8.1 shiny event (15 checks). A full multiplayer session, existing-world upgrade playtests, and large-collection performance checks remain pending before a stable V2 release.
+Both loader builds pass against Cobblemon **1.8.2**, along with **47 automated tests**. See the [optional integration guide](OPTIONAL_INTEGRATIONS.md) for startup results with and without optional addons. NeoForge plugin discovery is registered for REI and EMI; their client interfaces still require in-game validation.
+
+Earlier Cobblemon **1.8.1** validation passed targeted headless checks for restoration (38 checks) and the shiny event (15 checks). These are historical results, not new 1.8.2 gameplay tests. Player-driven addon rewards, client recipe viewers, multiplayer, existing-world upgrades and large-collection performance still require playtesting before publication.

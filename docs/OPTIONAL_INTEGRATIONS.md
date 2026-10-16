@@ -1,25 +1,23 @@
 # Optional booster reward integrations
 
-All eight addons were investigated for Minecraft 1.21.1 on 14 October 2026. Addons are optional dependencies: CobblemonCards continues to work when they are absent. An investigated release is not an in-game compatibility certification. NeoForge dedicated-server startup was tested with zero players; Fabric initialization was tested up to its EULA gate. Actual reward mechanics and multiplayer gameplay have not been tested.
+This guide covers the **six available automatic booster integrations** in CobblemonCards 2.1.0 for **Minecraft 1.21.1 and Cobblemon 1.8.2**, on Fabric and NeoForge. Addons are optional dependencies: CobblemonCards continues to work when they are absent. Versions and dependencies were checked on 16 October 2026. Startup checks and automated tests are recorded below; player-driven reward mechanics and multiplayer gameplay have not been tested. Parting Gifts is unavailable on this Cobblemon version and is covered separately under known incompatibilities.
 
-## Feasibility matrix
+## Available integrations
 
-| Addon | Investigated release | Published loaders | Verified mod ID | Reward mechanism | Implementation status |
+| Addon | Checked version | Loaders | Mod ID | Reward mechanism | Validation status |
 | --- | --- | --- | --- | --- | --- |
 | Cobblemon Rustling Spots | 5.0.1 | Fabric, NeoForge | `rustlingspots` | Public server interaction callback | Implemented as an additional interaction reward; gameplay validation pending |
 | Cobblemon Raid Dens | 0.13.2+1.21.1 | Fabric, NeoForge | `cobblemonraiddens` | Seven separate Raid Pouch loot tables | Implemented; gameplay validation pending |
 | CobbledGacha v.3 | 3.0.3 | Fabric, NeoForge | `cobbledgacha` | Five Minecraft capsule reward loot tables | Implemented; gameplay validation pending |
-| Cobblemon Battle Tower | 1.11.23 | Fabric, NeoForge | `cobblemon_battle_tower` | Configured Battle Points shop | Deferred: no verified additive shop registration API |
-| Cobblemon Expeditions | 1.8.1 | Fabric, NeoForge | `cobblemon_expeditions` | Custom weighted expedition loot and persistent reward inbox | Deferred: no additive reward-bundle callback |
-| CobbleDollars | 2.0.0+Beta-6.1 | Fabric, NeoForge | `cobbledollars` | Datapack merchant shops and addon currency | Deferred: no safe additive shop registration and transaction API verified |
-| Cobblemon PokeLoot | Published 1.0.2; jar metadata 1.0.0 | NeoForge | `pokeloot` | Direct private reward generation; block loot tables do not generate rewards | Deferred: no safe public reward hook |
 | Cobblemon Fishing Loot | 1.0.0 | Fabric, NeoForge | `cobblemonfishingloot` | Root Poké Rod fishing loot table | Implemented; gameplay validation pending |
+| Rad Gyms | 0.5.0 | Fabric, NeoForge | `rad_gyms` | Shared gym reward table; public active-gym lookup | Implemented in 2.1; gameplay validation pending |
+| Radical Cobblemon Trainers | 0.19.2-beta | Fabric, NeoForge | `rctmod` | Trainer victory loot, with public root-table lookup to exclude nested rewards | Implemented in 2.1; gameplay validation pending |
 
-The feasibility research preceded implementation. No configuration or shop prices are exposed for deferred integrations.
+Only the six addons listed above currently receive automatic booster rewards on the supported setup. This list describes implemented integrations, not certification of every gameplay or multiplayer scenario.
 
 ## Server configuration
 
-Use the **Compatibility** tab in the existing MidnightLib configuration screen, or edit `config/cobblemon-cards.json` with the server stopped and restart it. Gameplay uses the server's values; a client-only change does not alter rewards. All four implemented integrations default to enabled and automatically activate when their addon is detected. The following keys are flat entries in the existing file, not a nested `compatibility` object or a separate configuration file:
+Use the **Compatibility** tab in the existing MidnightLib configuration screen, or edit `config/cobblemon-cards.json` with the server stopped and restart it. Gameplay uses the server's values; a client-only change does not alter rewards. Integration settings default to enabled and automatically activate when a compatible addon is detected. Six addons can currently be used with the 1.8.2 setup; the Parting Gifts setting is retained for a future compatible release and cannot fix that addon's startup crash. The following keys are flat entries in the existing file, not a nested `compatibility` object or a separate configuration file:
 
 ```json
 {
@@ -45,7 +43,11 @@ Use the **Compatibility** tab in the existing MidnightLib configuration screen, 
   "cobbledGachaCherishChance": 5.0,
   "fishingLootEnabled": true,
   "fishingLootWaterChance": 3.0,
-  "fishingLootClassicChance": 1.0
+  "fishingLootClassicChance": 1.0,
+  "radGymsEnabled": true,
+  "radGymsBoosterChance": 10.0,
+  "rctEnabled": true,
+  "rctBoosterChance": 5.0
 }
 ```
 
@@ -57,7 +59,7 @@ Rustling mappings use `FAMILY=selector`, case-insensitively. Selectors are `clas
 
 The loot integrations add separate booster rolls without replacing the addon's existing reward entries. Each requires its detected addon and its own enabled setting on the server. They use the existing classic, generation and type-themed booster items; there are no new booster definitions or invented rare/special booster categories.
 
-Fabric appends pools through its loot modification API. NeoForge uses a Global Loot Modifier restricted to the exact table IDs below. Shared reward selection checks registered booster items. Neither loot implementation needs addon classes, compile dependencies, a client reward packet, or a new claims/economy system. Selection is uniform across eligible individual packs, not across category names: Great capsules can select one classic or nine generation packs, and Ultra capsules can select nine generation or eighteen type-themed packs. Missing/non-booster registry entries are skipped; an empty eligible selection gives no reward.
+Fabric appends pools through its loot modification API. NeoForge uses a Global Loot Modifier restricted to the verified tables below, including RCT's documented trainer table path with an actual-root check. Shared reward selection checks registered booster items. The loader hooks do not statically link optional addon classes; RCT and Rad Gyms resolve their verified public context APIs only after detection. No optional compile dependency, client reward packet or separate claims/economy system is added. Selection is uniform across eligible individual packs, not across category names: Great capsules can select one classic or nine generation packs, and Ultra capsules can select nine generation or eighteen type-themed packs. Missing/non-booster registry entries are skipped; an empty eligible selection gives no reward.
 
 ### Cobblemon Raid Dens
 
@@ -122,31 +124,47 @@ The investigated 5.0.1 release exposes `RustlingSpotAddonApi.registerInteraction
 
 Evidence: [official source](https://github.com/LevelsFR/RustlingSpots-MultiLoader-1.21.1), [official project](https://www.curseforge.com/minecraft/mc-mods/rustling-spots). License: MPL 2.0. This release requires Cobblemon 1.8.0 or later.
 
-## Addons requiring further work
+## Additions in 2.1.0
 
-### Cobblemon Expeditions
+### Dependencies of optional addons
 
-Expeditions uses custom `data/cobblemon_expeditions/expedition_loot/*.json` weighted pools, not Minecraft loot tables. Adding an item to those pools competes with normal rewards; it cannot provide an independent additive 10% roll. No supported reward-bundle extension callback was verified. Its documented public storage API handles persistent state and atomic reward claims, and must not be replaced to inject booster rewards. Request an upstream callback before the completed reward bundle is persisted.
+Installing an addon also requires its own dependencies. These do not become hard dependencies of CobblemonCards.
 
-Evidence: [official addon](https://www.curseforge.com/minecraft/mc-mods/cobblemon-expeditions), [official documentation repository](https://github.com/ZIPender/cobblemon_expeditions_doc), [atomic storage/claim contract](https://github.com/ZIPender/cobblemon_expeditions_doc/blob/main/storage-api.md). License: All Rights Reserved. The repository contains documentation, not the addon source.
+- CobbledGacha 3.0.3 and Raid Dens require GeckoLib. The 1.8.2 test setup uses GeckoLib **4.9.3 for Minecraft 1.21.1**: [Fabric](https://modrinth.com/mod/geckolib/version/tmxM7U4W), [NeoForge](https://modrinth.com/mod/geckolib/version/Grwn5rUB). Missing `software/bernie/geckolib/animatable/GeoItem` or `GeoBlockEntity` prevents the addon itself from starting, even if booster integration is disabled. GeckoLib 4.9.3 declares `geckoanimfix` incompatible.
+- Rad Gyms 0.5.0 was released for Cobblemon **1.8.1 or later**. It needs RCT API, Architectury, and Fabric Language Kotlin on Fabric. It does not require RCT Mod.
+- RCT Mod 0.19.2-beta requires RCT API and, on Fabric, **Forge Config API Port**. The current test setup uses [21.1.6 Fabric](https://modrinth.com/mod/forge-config-api-port/version/N5qzq0XV); NeoForge supplies the configuration API natively.
+- For Cobblemon **1.8.2**, use **RCT API 0.16.2-beta**: [Fabric](https://modrinth.com/mod/rctapi/version/DoQNDXAU), [NeoForge](https://modrinth.com/mod/rctapi/version/mYGAO3MT). Its changelog fixes crashes involving items changed in 1.8.2, including Iron Ball. Replace the older 0.16.1-beta used by the earlier 1.8.1 verification setup. Do not keep both API jars installed. CobblemonCards' dependency metadata rejects older RCT API versions when present; it does not require the API when no addon needs it.
+- Main dependencies remain at the versions in `gradle.properties` and the README. Their official metadata accepts the current Minecraft/loaders; the GraalJS 22.3.0, ICU 71.1 and MongoDB 4.10.2 versions bundled by Cobblemon did not change. Fabric Loader **0.19.5** and NeoForge **21.1.255** also satisfy Fishing Loot's newer minimum loader requirements.
 
-### Cobblemon Battle Tower
+The versions in the available integrations table passed the startup checks described below. A permissive Cobblemon dependency range alone does not prove binary compatibility, as the Parting Gifts incompatibility demonstrates.
 
-The native Battle Points shop supports configurable items and commands in `config/cobblemon_battle_tower/bp_shop_items.json`, reloaded by `/bt reload`. No supported additive shop contribution or milestone callback was verified. Replacing a shop list at startup would lose ownership across reloads and server/client synchronization. A safe future integration should extend this shop and use its existing BP transaction handler. The suggested 100/200/250 BP prices are not active CobblemonCards settings.
+### Rad Gyms 0.5.0
 
-Evidence: [official documentation](https://modrinth.com/mod/cobblemon-battle-tower), [Fabric 1.11.23](https://modrinth.com/mod/cobblemon-battle-tower/version/Srt2YL8E), [NeoForge 1.11.23](https://modrinth.com/mod/cobblemon-battle-tower/version/hzDUcNDj). License: All Rights Reserved. No official source repository or API documentation was linked.
+The exact patched table is **`rad_gyms:gyms/default/shared_loot_table`**. The shipped gym definitions call it once alongside one level-dependent table after the leader is beaten. A **10% booster** roll is added to that shared table, so common/uncommon/rare/epic tables cannot each grant another booster. Entrance archaeology and block-drop tables are untouched.
 
-### CobbleDollars
+The verified public `RadGymsState.getGymForPlayer(ServerPlayer)` and `Gym.getType()` methods select an existing booster matching the active gym type. Unknown types or a reward generated without an active gym use classic boosters. If the API becomes incompatible, the integration logs the problem and skips its booster roll. Rewards enter the native gym reward bag; opening that already-filled bag does not generate loot again. Datapacks redirecting rewards away from the shared table get no automatic booster; native `maxItems` caps and bundle capacity still apply.
 
-Beta-6 documentation defines `config/cobbledollars/default_shop.json` and custom shops in `data/<namespace>/cobbledollars/shop/<id>.json`. Custom shops can be opened through the native merchant command, but registering a new shop does not add its offers to naturally spawned merchants' default shop. No supported additive default-shop reload hook or durable purchase extension API was verified. CobblemonCards does not rewrite that configuration, create another balance, expose a purchase GUI or perform currency deductions. The suggested 2,500/5,000/7,500 prices are not active settings.
+Configuration: `radGymsEnabled` and `radGymsBoosterChance`. The public lookup is resolved only when `rad_gyms` is detected. No direct NPC battle-completion hook is added.
 
-Evidence: [official wiki](https://harmex.gitbook.io/cobbledollars), [current default shop format](https://harmex.gitbook.io/cobbledollars/configuration/default-shop), [datapack shop format](https://harmex.gitbook.io/cobbledollars/datapack/shops), [native merchant command](https://harmex.gitbook.io/cobbledollars/commands/cobblemerchant), [Fabric Beta-6.1](https://modrinth.com/mod/cobbledollars/version/NQdxKsW7), [NeoForge Beta-6.1](https://modrinth.com/mod/cobbledollars/version/Iqiqjfsi). License: All Rights Reserved. No official source repository was linked.
+Evidence: [official source](https://github.com/gitoido-mc/rad-gyms), [reward handler](https://github.com/gitoido-mc/rad-gyms/blob/main/x-common/src/main/kotlin/lol/gito/radgyms/common/event/gyms/GenerateRewardHandler.kt), [gym reward definitions](https://github.com/gitoido-mc/rad-gyms/tree/main/x-common/src/generated/data/rad_gyms/gyms), [Fabric 0.5.0](https://modrinth.com/mod/rad-gyms/version/jNLB4nS8), [NeoForge 0.5.0](https://modrinth.com/mod/rad-gyms/version/GczZp4sE). License: GPL-3.0-only. No addon files are copied or redistributed.
 
-### Cobblemon PokeLoot
+### Radical Cobblemon Trainers 0.19.2-beta
 
-The investigated Munkey PokeLoot mod is NeoForge-only. Its published 1.0.2 jar declares 1.0.0 internally. Its six ball block loot tables are empty; reward generation happens through a private method when the block is destroyed. Patching those tables would not extend actual rewards, and no safe public hook distinguishes naturally generated loot objects from placed/admin objects. A similarly named datapack project is a different addon and must not be treated as this mod.
+RCT derives victory reward IDs under **`rctmod:trainers/`** from trainer definitions (default, group or single-trainer tables). These tables receive a **5% classic-or-generation booster** roll. Each individual eligible pack has equal selection weight. The actual public `RCTMod.getInstance().getTrainerManager().getData(TrainerMob).getLootTableResource()` lookup identifies the current trainer's root table. Only an exact match can grant a booster. This matters because the shipped single-trainer tables often nest group tables: simply patching every trainer table would otherwise duplicate rewards on Fabric.
 
-Evidence: [official CurseForge project](https://www.curseforge.com/minecraft/mc-mods/cobblemon-pokeloot), [official Modrinth project](https://modrinth.com/mod/munkeys-cobblemon-pokeloot). License: All Rights Reserved. No source/API documentation was linked.
+The loot context must contain an actual RCT `TrainerMob` and a server player in `LAST_DAMAGE_PLAYER`. Generic item-category tables and ordinary entity death tables are excluded. RCT keeps control of victory eligibility, trainer cooldowns, multiplayer reward choice and ground-drop delivery. There is no per-player extra victory listener or cross-battle reward suppression. Two later legitimate victories still get independent rolls. Custom trainer tables under the verified namespace/path are supported; redirected tables in other namespaces are left to the datapack.
+
+Configuration: `rctEnabled` and `rctBoosterChance`. The reflection adapter resolves only verified public API methods after detecting `rctmod`; missing/incompatible APIs skip booster rewards without preventing startup. Rad Gyms uses Cobblemon NPCs and its own reward table, so RCT API being present does not activate RCT Mod rewards or duplicate gym rewards.
+
+Evidence: [official source, Minecraft 1.21.1](https://gitlab.com/srcmc/rct/mod/-/tree/1.21.1), [native trainer victory loot](https://gitlab.com/srcmc/rct/mod/-/blob/1.21.1/common/src/main/java/com/gitlab/srcmc/rctmod/world/entities/TrainerMob.java), [loot table documentation](https://srcmc.gitlab.io/rct/docs/latest/configuration/data_pack/loot_tables/), [Fabric 0.19.2-beta](https://modrinth.com/mod/rctmod/version/rgfBfnW9), [NeoForge 0.19.2-beta](https://modrinth.com/mod/rctmod/version/ITPewVPq). Metadata declares GNU-LGPL-3, while the inspected source headers describe the Mod Community License; no RCT source or assets are copied into CobblemonCards.
+
+## Known incompatibility: Parting Gifts
+
+**Parting Gifts 3.0.2 and 3.0.3 cannot be used with Cobblemon 1.8.2.** Both loaders fail during the addon's `ReleaseUtils` initialization with `NoSuchMethodError: ElementalType.<init>` because those releases call removed constructors. Remove the addon JAR until an upstream fix is available. CobblemonCards' metadata rejects these known broken versions before initialization.
+
+The integration code and the `partingGiftsEnabled` / `partingGiftsBoosterChance` settings are retained, but they are not an available reward source on the current setup. Disabling the integration cannot fix the addon's own startup failure. No compatible official release or fix was found during the 16 October verification.
+
+Evidence: [official source](https://github.com/anabsolutesloth/cobblemonreleaserewards), [release utility implementation](https://github.com/anabsolutesloth/cobblemonreleaserewards/blob/main/common/src/main/java/com/emperdog/releaserewards/loot/ReleaseUtils.java), [Fabric 3.0.3](https://modrinth.com/mod/cobblemon-release-rewards/version/LhIHf2Xu), [NeoForge 3.0.3](https://modrinth.com/mod/cobblemon-release-rewards/version/PXsx5x0U).
 
 ## Datapacks, authority and balance
 
@@ -162,24 +180,48 @@ Raid tiers 5-7 offer the largest booster rates. Frequent raids, cheap capsules a
 
 Source, official release metadata and actual reward resources were inspected before implementation. These checks establish verified IDs and mechanisms; they do not replace playing with the addons.
 
+### Current Cobblemon 1.8.2 validation
+
+Both builds and the 47 shared tests pass under Java 21. Isolated launches with the six compatible addons and RCT API 0.16.2-beta, GeckoLib 4.9.3 and Forge Config API Port 21.1.6 reached Fabric's `eula=false` gate and NeoForge's `Done`, respectively. No players joined these servers. The attempt including Parting Gifts 3.0.3 failed on both loaders with the removed `ElementalType` constructor, before the incompatibility metadata was added. This is recorded as an addon incompatibility, not a successful seven-addon test.
+
+| Case | Fabric | NeoForge |
+| --- | --- | --- |
+| No optional addons | PASS: EULA gate, exit 0 | PASS: `Done`, clean console stop, exit 0 |
+| Six addons, integrations enabled | PASS: six detected, context APIs verified, EULA gate | PASS: six detected, context APIs verified, `Done`, clean stop |
+| Six addons, all integration settings disabled | PASS: six flags false, EULA gate | PASS: six flags false, `Done`, clean stop |
+| Parting Gifts 3.0.3 installed | Expected rejection: explicit loader incompatibility before initialization | Expected rejection: explicit pre-loading incompatibility with explanatory reason |
+| Old RCT API 0.16.1-beta installed | Expected rejection: minimum API version shown | Expected rejection: minimum API version shown |
+
+These checks verify startup and configuration loading, not actual booster rewards. The isolated cases are `v2182-absent`, `v2182-six-enabled`, `v2182-six-disabled`, `v2182-all-enabled` (Parting Gifts rejection), and `v2182-rct-old`. Packaged Fabric/NeoForge metadata was also inspected to confirm the 1.8.2 minimum, optional API constraints and exact Parting Gifts exclusions. The current NeoForge six-addon run still reports the existing Gacha machine-table/PokeBlocks warnings described above; it reaches `Done` despite those unrelated table errors.
+
+REI/EMI NeoForge discovery was also corrected: REI has a native annotated client adapter and EMI's shared plugin declares its verified entrypoint annotation. The versions in the README still support Minecraft 1.21.1 on both loaders. Client recipe registration and rendering have not been tested in-game.
+
+### Historical Cobblemon 1.8.1 checks
+
+The following runs predate the 1.8.2 target. Their Parting Gifts success and older RCT API versions apply to that earlier setup only.
+
 | Check | Result |
 | --- | --- |
 | Fabric build | PASS: `:fabric:build`, Java 21 |
 | NeoForge build | PASS: `:neoforge:build`, Java 21 |
-| Automated common tests | PASS: `:common:test`; 44 tests, 0 failures |
-| Fabric bootstrap, optional addons absent | PASS: isolated development launch reached `eula=false` gate; exit 0 |
-| Fabric bootstrap, all four integrated addons present | PASS: all four detected enabled; Rustling API registered; reached `eula=false` gate; exit 0 |
-| NeoForge dedicated startup, optional addons absent | PASS: isolated development server reached `Done`, zero players, clean console stop; exit 0 |
-| NeoForge dedicated startup, all four integrated addons present | PASS: detected integrations, reached `Done`, zero players, clean console stop; exit 0; Gacha machine warning above |
+| Automated common tests | PASS for 2.1.0: `:common:test`; 47 tests, 0 failures, including independent new toggles and RCT nested-root regression |
+| Fabric 2.1.0 bootstrap, optional addons absent | PASS: isolated development launch reached `eula=false` gate; exit 0 |
+| Fabric 2.1.0 bootstrap, three new addons present | PASS: three detected enabled; RCT/Rad Gyms context APIs verified; EULA gate; exit 0 |
+| Fabric 2.1.0 bootstrap, all seven addons enabled | PASS: seven detected, public APIs verified; RCT API 0.16.1-beta; EULA gate; exit 0 |
+| Fabric bootstrap, seven addons with three new integrations disabled | PASS: new enabled flags read false; EULA gate; exit 0 (RCT API 0.16.0-beta is accepted on Fabric) |
+| NeoForge 2.1.0 dedicated startup, optional addons absent | PASS: isolated server reached `Done`, zero players, clean console stop; exit 0 |
+| NeoForge 2.1.0 dedicated startup, three new addons present | PASS: three detected, context APIs verified, `Done`, clean stop; exit 0 |
+| NeoForge 2.1.0 dedicated startup, seven addons, three new integrations disabled | PASS: flags read false, RCT API 0.16.1-beta, `Done`, clean stop; exit 0 |
+| NeoForge 2.1.0 dedicated startup, all seven addons enabled | PASS: seven detected, public APIs verified, `Done`, clean stop; exit 0; existing Gacha machine warnings above |
 | Each addon tested individually in gameplay | NOT RUN |
 | Enabled and disabled reward behavior | NOT RUN in-game |
-| Actual pouch/capsule/fishing rewards | NOT RUN in-game |
+| Actual pouch/capsule/fishing/release/gym/trainer rewards | NOT RUN in-game |
 | Dedicated-server reward gameplay and multiplayer | NOT RUN |
 | Non-default config, 0% and 100% | NOT RUN in-game |
 | Datapack replacements and reloads | NOT RUN in-game |
 | Reconnect, restart and repeated interaction | NOT RUN in-game |
 
-The successful build/test command was `:common:test :fabric:build :neoforge:build --console=plain` under Java 21. Bootstrap runs used isolated directories under `build/compat-smoke/<loader>/<absent-or-present>/`; their `bootstrap.log` files are local build artifacts. No EULA acceptance file was changed: Fabric stopped at its false setting, while the NeoForge development launch bypassed that gate and started the server. Neither run had players or exercised reward interactions.
+The successful build/test command was `:common:test :fabric:build :neoforge:build --console=plain` under Java 21. Historical 1.8.1 bootstrap runs used isolated directories under `build/compat-smoke/<loader>/v21-{absent,present,all-disabled,all-enabled}/`; current 1.8.2 runs use `v2182-*`. Their `bootstrap.log` files are local build artifacts. No EULA acceptance file was changed: Fabric stopped at its false setting, while NeoForge development launches bypassed that gate and started the server. These runs had zero players and did not exercise reward interactions. NeoForge's three-addon run also logged non-fatal upstream mixin warnings about client classes on a dedicated server; it still reached `Done` and stopped cleanly.
 
 Before a release, run the remaining gameplay checklist separately on Fabric and NeoForge. Verify that normal rewards survive, disabled integrations give no packs, independent fishing rewards can both occur without accidental duplicate callbacks, completed multiplayer raids retain the addon's participant handling, and custom replacing raid rewards bypass the tier integration. Test full inventories and survival item consumption through the addons' native mechanics.
 
@@ -189,13 +231,15 @@ Created files (paths are relative to the repository):
 
 | Directory | Files |
 | --- | --- |
-| `common/src/main/java/com/howlite/cobblemoncards/compat/` | `CompatManager.java`, `CompatConfig.java`, `CompatReward.java`, `BoosterRewardHelper.java`, `RewardProbability.java`, `CompatBoosterLootEntry.java`, `RustlingSpotsCompat.java` |
+| `common/src/main/java/com/howlite/cobblemoncards/compat/` | `CompatManager.java`, `CompatConfig.java`, `CompatReward.java`, `BoosterRewardHelper.java`, `RewardProbability.java`, `CompatBoosterLootEntry.java`, `RustlingSpotsCompat.java`, `RctCompat.java`, `RadGymsCompat.java` |
 | `fabric/src/main/java/com/howlite/cobblemoncards/fabric/compat/` | `FabricLootCompat.java` |
 | `neoforge/src/main/java/com/howlite/cobblemoncards/neoforge/compat/` | `NeoForgeLootCompat.java`, `CompatBoosterModifier.java` |
 | `neoforge/src/main/resources/data/` | `neoforge/loot_modifiers/global_loot_modifiers.json`, `cobblemon-cards/loot_modifiers/optional_boosters.json` |
 | `common/src/test/java/com/howlite/cobblemoncards/compat/` | `RewardProbabilityTest.java`, `BoosterRewardHelperTest.java`, `CompatConfigTest.java`, `CompatManagerTest.java` |
 | `docs/` | `OPTIONAL_INTEGRATIONS.md` |
 
-Modified files: `common/build.gradle`; `common/src/main/java/com/howlite/cobblemoncards/CobblemonCardsConfig.java`; `common/src/main/resources/assets/cobblemon-cards/lang/en_us.json` and `fr_fr.json`; `fabric/src/main/java/com/howlite/cobblemoncards/fabric/FabricCobblemonCards.java`; `neoforge/src/main/java/com/howlite/cobblemoncards/neoforge/NeoForgeCobblemonCards.java`; `README.md`; `README_MODRINTH.md`; `CHANGELOG.md`; `docs/V2_GUIDE.md`.
+Modified files across the compatibility feature: `common/build.gradle`; `common/src/main/java/com/howlite/cobblemoncards/CobblemonCardsConfig.java`; the shared compatibility classes above; `common/src/main/resources/assets/cobblemon-cards/lang/en_us.json` and `fr_fr.json`; `fabric/src/main/java/com/howlite/cobblemoncards/fabric/FabricCobblemonCards.java`; `neoforge/src/main/java/com/howlite/cobblemoncards/neoforge/NeoForgeCobblemonCards.java`; the NeoForge modifier above; the configuration/manager tests above; `gradle.properties`; `README.md`; `README_MODRINTH.md`; `CHANGELOG.md`; `docs/V2_GUIDE.md`.
+
+The 1.8.2 migration also updates `fabric/build.gradle`, `fabric/src/main/resources/fabric.mod.json`, `neoforge/src/main/resources/META-INF/neoforge.mods.toml`, the shared client `compat/emi/CardRecyclerEmiPlugin.java` and `compat/rei/CardRecyclerReiPlugin.java`, and adds `neoforge/src/main/java/com/howlite/cobblemoncards/neoforge/compat/rei/NeoForgeCardRecyclerReiPlugin.java`.
 
 Downloaded research artifacts and isolated test-server files remain under ignored `build/` directories and are not distributed in either mod jar.

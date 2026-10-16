@@ -22,7 +22,8 @@ class CompatManagerTest {
             queriedModIds.add(modId);
             return false;
         });
-        assertEquals(Set.of("rustlingspots", "cobblemonraiddens", "cobbledgacha", "cobblemonfishingloot"), queriedModIds);
+        assertEquals(Set.of("rustlingspots", "cobblemonraiddens", "cobbledgacha", "cobblemonfishingloot",
+                "releaserewards", "rad_gyms", "rctmod"), queriedModIds);
         for (CompatConfig.Integration integration : CompatConfig.Integration.values()) {
             assertFalse(CompatManager.isDetected(integration));
         }
@@ -30,7 +31,7 @@ class CompatManagerTest {
             fail("Mod detection must not be repeated after initialization");
             return true;
         });
-        assertEquals(4, detections.get());
+        assertEquals(7, detections.get());
         assertFalse(CompatManager.reward("fishing_water").isEnabled());
     }
 
@@ -49,7 +50,9 @@ class CompatManagerTest {
                 Map.entry("cobbledgacha:gacha_capsules/capsule_a3", List.of("gacha_ultra")),
                 Map.entry("cobbledgacha:gacha_capsules/capsule_a4", List.of("gacha_master")),
                 Map.entry("cobbledgacha:gacha_capsules/capsule_a5", List.of("gacha_cherish")),
-                Map.entry("cobblemon:fishing/pokerod", List.of("fishing_water", "fishing_classic")));
+                Map.entry("cobblemon:fishing/pokerod", List.of("fishing_water", "fishing_classic")),
+                Map.entry("releaserewards:rewards/global", List.of("parting_gifts")),
+                Map.entry("rad_gyms:gyms/default/shared_loot_table", List.of("rad_gyms")));
         Set<String> rewardIds = new LinkedHashSet<>();
         for (Map.Entry<String, List<String>> entry : expected.entrySet()) {
             List<CompatReward> rules = CompatManager.rewardsForTable(ResourceLocation.parse(entry.getKey()));
@@ -59,8 +62,8 @@ class CompatManagerTest {
                 assertSame(rule, CompatManager.reward(rule.id()));
             }
         }
-        assertEquals(13, expected.size());
-        assertEquals(14, rewardIds.size());
+        assertEquals(15, expected.size());
+        assertEquals(16, rewardIds.size());
     }
 
     @Test
@@ -69,11 +72,40 @@ class CompatManagerTest {
                 "cobblemon:fishing/pokerod_treasure", "cobblemon:fishing/pokerod_rare_treasure",
                 "cobblemonraiddens:raid/tier/tier_eight", "cobblemonraiddens:blocks/raid_den",
                 "cobbledgacha:gacha_capsules/capsule_a6", "pokeloot:blocks/poke_ball",
+                "releaserewards:rewards/types/water", "releaserewards:rewards/species/pikachu",
+                "rad_gyms:gyms/default/common_loot_table", "rad_gyms:structures/entrance/water",
+                "rctmod:generic/common/pokeballs", "rctmod:entities/trainer", "rctmod:trainers/",
                 "minecraft:blocks/stone", "differentmod:fishing/pokerod")) {
             assertTrue(CompatManager.rewardsForTable(ResourceLocation.parse(id)).isEmpty(), id);
         }
         assertTrue(CompatManager.rewardsForTable(null).isEmpty());
         assertNull(CompatManager.reward("unknown_reward"));
+    }
+
+    @Test
+    void rctTrainerTablesCarryTheirRootThroughTheFabricEntryCodec() {
+        for (String path : List.of("trainers/default", "trainers/groups/leader",
+                "trainers/single/leader_erika_01a1", "trainers/single/custom_datapack_trainer")) {
+            ResourceLocation table = ResourceLocation.fromNamespaceAndPath("rctmod", path);
+            List<CompatReward> rules = CompatManager.rewardsForTable(table);
+            assertEquals(1, rules.size());
+            assertEquals(table.toString(), rules.getFirst().id());
+            assertEquals(RCT, rules.getFirst().integration());
+            assertEquals(rules.getFirst(), CompatManager.reward(table.toString()));
+        }
+        assertFalse(CompatManager.isRctTable(ResourceLocation.parse("anothermod:trainers/default")));
+    }
+
+    @Test
+    void rctNestedGroupTablesDoNotAddAnotherRewardOrSuppressTheNextBattle() {
+        ResourceLocation single = ResourceLocation.parse("rctmod:trainers/single/leader_erika_01a1");
+        ResourceLocation group = ResourceLocation.parse("rctmod:trainers/groups/leader");
+        assertTrue(RctCompat.matchesRoot(single, single));
+        assertFalse(RctCompat.matchesRoot(group, single));
+        assertTrue(RctCompat.matchesRoot(group, group));
+        assertTrue(RctCompat.matchesRoot(single, single), "A later legitimate victory must still roll");
+        assertFalse(RctCompat.matchesRoot(null, single));
+        assertFalse(RctCompat.matchesRoot(single, null));
     }
 
     @Test

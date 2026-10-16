@@ -309,6 +309,27 @@ public class CobblemonCardsConfig extends MidnightConfig {
     @Entry(category = "compatibility", min = 0, max = 100)
     public static double fishingLootClassicChance = 1.0;
 
+    @Comment(centered = true, category = "compatibility")
+    public static String releaseAndGymRewards;
+
+    @Entry(category = "compatibility")
+    public static boolean partingGiftsEnabled = true;
+
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double partingGiftsBoosterChance = 1.0;
+
+    @Entry(category = "compatibility")
+    public static boolean radGymsEnabled = true;
+
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double radGymsBoosterChance = 10.0;
+
+    @Entry(category = "compatibility")
+    public static boolean rctEnabled = true;
+
+    @Entry(category = "compatibility", min = 0, max = 100)
+    public static double rctBoosterChance = 5.0;
+
     public static int getRestorerProcessTime(int targetGrade) {
         if (targetGrade < 2 || targetGrade > 10) return 0;
         int base = Math.clamp(restorerBaseProcessTime, 1, 72000);

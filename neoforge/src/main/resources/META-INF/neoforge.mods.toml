@@ -80,5 +80,23 @@ versionRange="[${midnightlib_version},)"
 ordering="NONE"
 side="BOTH"
 
+# The 1.8.2 item changes require RCT API's matching compatibility fix, when installed.
+[[dependencies.cobblemon_cards]]
+modId="rctapi"
+type="optional"
+versionRange="[0.16.2-beta,)"
+reason="Cobblemon 1.8.2 requires RCT API 0.16.2-beta or later to avoid crashes involving changed held items."
+ordering="NONE"
+side="BOTH"
+
 [[mixins]]
 config="cobblemon-cards.mixins.json"
+
+# These releases call ElementalType constructors removed by Cobblemon 1.8.2.
+[[dependencies.cobblemon_cards]]
+modId="releaserewards"
+type="incompatible"
+versionRange="[3.0.2,3.0.3]"
+reason="Parting Gifts 3.0.2/3.0.3 crashes with Cobblemon 1.8.2. Remove it until an upstream fix is available; disabling booster rewards does not fix the addon."
+ordering="NONE"
+side="BOTH"

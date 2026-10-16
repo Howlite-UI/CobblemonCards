@@ -49,5 +49,9 @@
 		"architectury": ">=${architectury_version}",
 		"cloth-config": ">=${cloth_config_version}",
 		"midnightlib": ">=${midnightlib_version}"
+	},
+	"breaks": {
+		"releaserewards": ["3.0.2", "3.0.3"],
+		"rctapi": "<0.16.2-beta"
 	}
 }

@@ -22,7 +22,8 @@ class CompatConfigTest {
         for (Field field : CobblemonCardsConfig.class.getFields()) {
             String name = field.getName();
             if (name.startsWith("rustlingSpots") || name.startsWith("raidDens")
-                    || name.startsWith("cobbledGacha") || name.startsWith("fishingLoot")) {
+                    || name.startsWith("cobbledGacha") || name.startsWith("fishingLoot")
+                    || name.startsWith("partingGifts") || name.startsWith("radGyms") || name.startsWith("rct")) {
                 originalValues.put(field, field.get(null));
             }
         }
@@ -74,6 +75,29 @@ class CompatConfigTest {
         CobblemonCardsConfig.rustlingSpotsBoosterChance = 12.75;
         assertEquals(12.75, CompatConfig.rustlingChance());
         assertEquals(0.0, CompatConfig.chance("unknown_reward"));
+    }
+
+    @Test
+    void newIntegrationsHaveIndependentTogglesAndPercentages() {
+        CobblemonCardsConfig.partingGiftsEnabled = false;
+        CobblemonCardsConfig.radGymsEnabled = true;
+        CobblemonCardsConfig.rctEnabled = false;
+        assertFalse(CompatConfig.enabled(PARTING_GIFTS));
+        assertTrue(CompatConfig.enabled(RAD_GYMS));
+        assertFalse(CompatConfig.enabled(RCT));
+        CobblemonCardsConfig.partingGiftsEnabled = true;
+        CobblemonCardsConfig.radGymsEnabled = false;
+        CobblemonCardsConfig.rctEnabled = true;
+        assertTrue(CompatConfig.enabled(PARTING_GIFTS));
+        assertFalse(CompatConfig.enabled(RAD_GYMS));
+        assertTrue(CompatConfig.enabled(RCT));
+        CobblemonCardsConfig.partingGiftsBoosterChance = 0.0;
+        CobblemonCardsConfig.radGymsBoosterChance = 100.0;
+        CobblemonCardsConfig.rctBoosterChance = 17.25;
+        assertEquals(0.0, CompatConfig.chance("parting_gifts"));
+        assertEquals(100.0, CompatConfig.chance("rad_gyms"));
+        assertEquals(17.25, CompatConfig.chance("rctmod:trainers/groups/leader"));
+        assertEquals(0.0, CompatConfig.chance("rctmod:generic/common/berries"));
     }
 
     @Test

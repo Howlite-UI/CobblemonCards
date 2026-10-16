@@ -23,10 +23,11 @@
   <img src="https://raw.githubusercontent.com/Howlite-UI/CobblemonCards/main/common/src/main/resources/assets/cobblemon-cards/textures/graphics/cobblemon_divider.png" alt="Divider" />
 </p>
 
-## V2 beta — 2.0.0-beta.1
+## 2.1.0 — Optional survival rewards (prepared release)
 
-This prerelease targets **Minecraft 1.21.1**, **Java 21**, and **Cobblemon 1.8.1** on **Fabric and NeoForge**.
+This prepared release targets **Minecraft 1.21.1**, **Java 21**, and **Cobblemon 1.8.2** on **Fabric and NeoForge**.
 
+- **New optional rewards**: type-matched Rad Gyms rewards and RCT trainer victory loot, with independent server settings. Parting Gifts support is pending an upstream compatibility fix.
 - **Trainer bonuses**: cards can carry an additional Experience, Catch Rate, or Shiny Chance bonus while keeping their primary stat.
 - **Card Restorer**: higher target grades take longer; restoration continues after closing the GUI and saves its progress.
 - **Readable configuration**: seven MidnightLib tabs with section headings, individual stat multipliers, and English/French tooltips.
@@ -35,7 +36,7 @@ This prerelease targets **Minecraft 1.21.1**, **Java 21**, and **Cobblemon 1.8.1
 
 [Read the V2 guide](https://github.com/Howlite-UI/CobblemonCards/blob/main/docs/V2_GUIDE.md) · [Custom Fakemon sprites](https://github.com/Howlite-UI/CobblemonCards/blob/main/docs/CUSTOM_FAKEMON_SPRITES.md) · [Full changelog](https://github.com/Howlite-UI/CobblemonCards/blob/main/CHANGELOG.md)
 
-The automated builds and targeted checks pass. Dedicated-server multiplayer, upgrades of existing worlds, and large-collection performance still need playtesting before the stable V2 release.
+Release 2.1.0 is prepared for validation. Automated builds and targeted tests are recorded in the compatibility guide; player-driven addon rewards, multiplayer, upgrades of existing worlds and large-collection performance still need playtesting before publication.
 
 ## 🌟 Key Features
 
@@ -137,9 +138,11 @@ Removing or replacing the card cancels restoration. Removing required dust pause
 
 ## Optional survival booster rewards
 
-With the supported optional addon installed, booster packs are added automatically to **Rustling Spots interactions**, **Raid Dens' Raid Pouches**, **CobbledGacha v.3 capsules**, and **Cobblemon Fishing Loot's Poke Rod item catches**. Normal reward processing is preserved, and each integration can be disabled independently in CobblemonCards' server configuration. None of these addons is required to use CobblemonCards.
+With the supported optional addon installed, booster packs are added automatically to **Rustling Spots interactions**, **Raid Dens' Raid Pouches**, **CobbledGacha v.3 capsules**, **Cobblemon Fishing Loot's Poke Rod item catches**, **Rad Gyms reward bags**, and **RCT trainer victory loot**. Normal reward processing is preserved, and each integration can be disabled independently in CobblemonCards' server configuration. None of these addons is required to use CobblemonCards.
 
-Defaults are **10% per consumed Rustling Spot interaction**, **5-50% by raid tier**, **1-5% by capsule rarity**, and independent fishing chances of **3% for Water boosters** and **1% for classic boosters**. Battle Tower, Expeditions, CobbleDollars and PokeLoot are investigated but currently unsupported automatically. See the [compatibility guide](https://github.com/Howlite-UI/CobblemonCards/blob/main/docs/OPTIONAL_INTEGRATIONS.md) for exact investigated versions, table IDs, configuration, limitations and the runtime testing checklist.
+Defaults are **10% per consumed Rustling Spot interaction**, **5-50% by raid tier**, **1-5% by capsule rarity**, and independent fishing chances of **3% for Water boosters** and **1% for classic boosters**. New defaults are **10% for Rad Gyms** and **5% for RCT**. Battle Tower, Expeditions, CobbleDollars and PokeLoot are investigated but currently unsupported automatically. See the [compatibility guide](https://github.com/Howlite-UI/CobblemonCards/blob/main/docs/OPTIONAL_INTEGRATIONS.md) for exact investigated versions, table IDs, configuration, limitations and the runtime testing checklist.
+
+**Parting Gifts 3.0.2 and 3.0.3 are incompatible with Cobblemon 1.8.2 on both loaders:** the addon calls a removed `ElementalType` constructor during startup. Remove these addon JARs before upgrading; CobblemonCards rejects these versions with an incompatibility message. Its optional 1% reward integration is preserved pending an upstream fix. Disabling the integration cannot make these addon versions compatible.
 
 ## 📦 Modpack Integration & Standalone Notice
 
@@ -150,9 +153,11 @@ Defaults are **10% per consumed Rustling Spot interaction**, **5-50% by raid tie
   <img src="https://raw.githubusercontent.com/Howlite-UI/CobblemonCards/main/common/src/main/resources/assets/cobblemon-cards/textures/graphics/cobblemon_divider.png" alt="Divider" />
 </p>
 
+Optional addons also require their own libraries. For the Cobblemon **1.8.2** setup, use **GeckoLib 4.9.3** for CobbledGacha/Raid Dens, **RCT API 0.16.2-beta** for Rad Gyms/RCT, and **Forge Config API Port 21.1.6** for RCT on Fabric. RCT API 0.16.2-beta includes the Iron Ball compatibility fix for Cobblemon 1.8.2; replace older 0.16.1-beta installations. These libraries remain optional for CobblemonCards. See the [compatibility guide](https://github.com/Howlite-UI/CobblemonCards/blob/main/docs/OPTIONAL_INTEGRATIONS.md) for loader-specific downloads and validation results.
+
 ## 🛠️ Required Dependencies
 
-To run **Cobblemon Cards**, use **Minecraft 1.21.1**, **Java 21**, and **Cobblemon 1.8.1**. Install the dependencies for your loader; Fabric and NeoForge JARs are separate downloads. This branch targets Cobblemon 1.8.x.
+To run **Cobblemon Cards**, use **Minecraft 1.21.1**, **Java 21**, and **Cobblemon 1.8.2**. Install the dependencies for your loader; Fabric and NeoForge JARs are separate downloads.
 
 ### 🪶 For Fabric Users
 
@@ -161,7 +166,7 @@ To run **Cobblemon Cards**, use **Minecraft 1.21.1**, **Java 21**, and **Cobblem
 | **Fabric Loader** | `0.19.5` | Mod loader |
 | **Fabric API** | `0.116.17+1.21.1` | Core Fabric library |
 | **Fabric Language Kotlin** | `1.14.1+kotlin.2.4.20` | Kotlin runtime |
-| **Cobblemon** | `1.8.1+1.21.1` | Core Pokémon mod |
+| **Cobblemon** | `1.8.2+1.21.1` | Core Pokémon mod |
 | **Architectury API** | `13.0.11` | Cross-platform compatibility library |
 | **Cloth Config** | `15.0.140` | Configuration UI dependency |
 | **Accessories** | `1.1.0-beta.53+1.21.1` | Accessory slots for binders and passive bonuses |
@@ -174,17 +179,19 @@ To run **Cobblemon Cards**, use **Minecraft 1.21.1**, **Java 21**, and **Cobblem
 | :--- | :--- | :--- |
 | **NeoForge** | `21.1.255` | Mod loader |
 | **Kotlin for Forge** | `5.12.0` | Kotlin runtime for Cobblemon |
-| **Cobblemon** | `1.8.1+1.21.1` | Core Pokémon mod |
+| **Cobblemon** | `1.8.2+1.21.1` | Core Pokémon mod |
 | **Architectury API** | `13.0.11` | Cross-platform compatibility library |
 | **Cloth Config** | `15.0.140` | Configuration UI dependency |
 | **Accessories** | `1.1.0-beta.53+1.21.1` | Accessory slots for binders and passive bonuses |
 | **owo-lib** | `0.12.15.5-beta.1+1.21` | Runtime library required by Accessories (includes its helper libraries) |
 | **MidnightLib** | `1.9.3+1.21.1-neoforge` | Categorized configuration screen |
 
-These are the dependency versions used by this beta, centralized in `gradle.properties`. Binders use Accessories on both loaders; Trinkets and Cardinal Components are not required by this addon.
+These are the dependency versions used by this prepared release, centralized in `gradle.properties`. Binders use Accessories on both loaders; Trinkets and Cardinal Components are not required by this addon.
 
 > [!TIP]
 > **Optional recipe viewers:** JEI `19.51.0.418`, REI `16.0.799`, and EMI `1.1.24+1.21.1` have integrations for the Card Recycler. Install a viewer for your loader if you want to browse its recycling recipes in-game.
+
+NeoForge plugin discovery is registered for REI and EMI. Their client interfaces still require in-game validation with this release.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Howlite-UI/CobblemonCards/main/common/src/main/resources/assets/cobblemon-cards/textures/graphics/cobblemon_divider.png" alt="Divider" />
@@ -199,8 +206,8 @@ These are the dependency versions used by this beta, centralized in `gradle.prop
 
 ### Upgrading from 1.x
 
-1. Keep a backup of your existing world and configuration before trying the beta.
-2. Replace the old Cobblemon Cards JAR with **one** `2.0.0-beta.1` JAR for your loader, and update Cobblemon and the dependencies listed above. Other Cobblemon addons must also support Cobblemon 1.8.1.
+1. Keep a backup of your existing world and configuration before upgrading.
+2. Replace the old Cobblemon Cards JAR with **one** `2.1.0` JAR for your loader, and update Cobblemon and the dependencies listed above. Other Cobblemon addons must also support Cobblemon 1.8.2.
 3. Keep `config/cobblemon-cards.json`: existing values are retained, including settings that disable bonuses. Newly added settings are written during startup.
 4. Existing cards keep their stored stats. Older cards without an additional trainer stat and binders using the legacy container component remain readable. Opening a world does not reroll its cards.
 
@@ -223,17 +230,17 @@ If you want to modify the source code or build the mod manually:
    ```bash
    ./gradlew :fabric:build :neoforge:build
    ```
-   On Windows, use `gradlew.bat` instead of `./gradlew`. The installable JARs for this beta are:
+   On Windows, use `gradlew.bat` instead of `./gradlew`. The installable JARs for 2.1.0 are:
 
-   - `fabric/build/libs/cobblemon-cards-fabric-2.0.0-beta.1.jar`
-   - `neoforge/build/libs/cobblemon-cards-neoforge-2.0.0-beta.1.jar`
+   - `fabric/build/libs/cobblemon-cards-fabric-2.1.0.jar`
+   - `neoforge/build/libs/cobblemon-cards-neoforge-2.1.0.jar`
 
    Use the JAR matching your loader. Common, dev, and sources JARs are development artifacts.
 4. Launch a development client with `./gradlew :fabric:runClient` or `./gradlew :neoforge:runClient`. Both use Java 21.
 
 Fabric development runs explicitly include the GraalJS, ICU, and MongoDB libraries bundled by Cobblemon. Their versions match the [official Cobblemon addon template](https://gitlab.com/cable-mc/cobblemon-mdks/-/blob/master/fabric-java/build.gradle.kts); NeoForge discovers these libraries from Cobblemon's nested JARs. Player installations receive them through Cobblemon itself.
 
-Validation covers both loader builds, packaged classes/resources, and dependency metadata. Both loaders initialized the addon and Cobblemon's Showdown service on Java 21; a NeoForge development server also loaded a test world and all 1,025 species. Targeted headless checks passed for restoration (38 checks) and the Cobblemon 1.8.1 shiny event (15 checks). These checks do not replace multiplayer or performance playtests. Client gameplay has been tried during development, but a full release validation across both loaders is still pending.
+Both loader builds pass against Cobblemon **1.8.2**, along with **47 automated tests**. See the [compatibility guide](https://github.com/Howlite-UI/CobblemonCards/blob/main/docs/OPTIONAL_INTEGRATIONS.md) for the separate startup results with optional addons. Earlier Cobblemon **1.8.1** validation initialized both loaders and Showdown, loaded a NeoForge test world with all 1,025 species, and passed targeted headless checks for restoration (38 checks) and the shiny event (15 checks). Those historical checks have not been repeated as gameplay tests on 1.8.2. Player-driven rewards, client recipe viewers, multiplayer, existing-world upgrades and large-collection performance still require playtesting before publication.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Howlite-UI/CobblemonCards/main/common/src/main/resources/assets/cobblemon-cards/textures/graphics/cobblemon_divider.png" alt="Divider" />

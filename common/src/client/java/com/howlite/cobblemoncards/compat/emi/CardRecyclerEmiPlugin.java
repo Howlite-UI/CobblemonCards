@@ -2,6 +2,7 @@ package com.howlite.cobblemoncards.compat.emi;
 
 import com.howlite.cobblemoncards.block.ModBlocks;
 import com.howlite.cobblemoncards.compat.RecyclerRecipeInfo;
+import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.stack.EmiStack;
@@ -10,9 +11,10 @@ import net.minecraft.world.item.ItemStack;
 /**
  * Plugin EMI pour le mod Cobblemon Cards.
  * <p>
- * Chargé automatiquement par EMI via l'entrypoint {@code "emi"} dans fabric.mod.json.
+ * Chargé par l'entrypoint {@code "emi"} sur Fabric et par annotation sur NeoForge.
  * Si EMI n'est pas installé, cette classe n'est jamais chargée → aucun crash.
  */
+@EmiEntrypoint
 public class CardRecyclerEmiPlugin implements EmiPlugin {
 
     /** Instance partagée de la catégorie — référencée par CardRecyclerEmiRecipe */

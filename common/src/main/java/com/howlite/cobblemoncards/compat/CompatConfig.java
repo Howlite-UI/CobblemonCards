@@ -1,6 +1,7 @@
 package com.howlite.cobblemoncards.compat;
 
 import com.howlite.cobblemoncards.CobblemonCardsConfig;
+import net.minecraft.resources.ResourceLocation;
 import java.util.Locale;
 
 /** Read the existing MidnightConfig fields on the server; no second config file or library. */
@@ -9,7 +10,8 @@ public final class CompatConfig {
 
     public enum Integration {
         RUSTLING_SPOTS("rustlingspots"), RAID_DENS("cobblemonraiddens"),
-        COBBLED_GACHA("cobbledgacha"), FISHING_LOOT("cobblemonfishingloot");
+        COBBLED_GACHA("cobbledgacha"), FISHING_LOOT("cobblemonfishingloot"),
+        PARTING_GIFTS("releaserewards"), RAD_GYMS("rad_gyms"), RCT("rctmod");
 
         private final String modId;
         Integration(String modId) { this.modId = modId; }
@@ -22,6 +24,9 @@ public final class CompatConfig {
             case RAID_DENS -> CobblemonCardsConfig.raidDensEnabled;
             case COBBLED_GACHA -> CobblemonCardsConfig.cobbledGachaEnabled;
             case FISHING_LOOT -> CobblemonCardsConfig.fishingLootEnabled;
+            case PARTING_GIFTS -> CobblemonCardsConfig.partingGiftsEnabled;
+            case RAD_GYMS -> CobblemonCardsConfig.radGymsEnabled;
+            case RCT -> CobblemonCardsConfig.rctEnabled;
         };
     }
 
@@ -43,6 +48,9 @@ public final class CompatConfig {
     }
 
     public static double chance(String reward) {
+        if (CompatManager.isRctTable(reward == null ? null : ResourceLocation.tryParse(reward))) {
+            return CobblemonCardsConfig.rctBoosterChance;
+        }
         return switch (reward) {
             case "raid_1" -> CobblemonCardsConfig.raidDensTier1Chance;
             case "raid_2" -> CobblemonCardsConfig.raidDensTier2Chance;
@@ -58,7 +66,10 @@ public final class CompatConfig {
             case "gacha_cherish" -> CobblemonCardsConfig.cobbledGachaCherishChance;
             case "fishing_water" -> CobblemonCardsConfig.fishingLootWaterChance;
             case "fishing_classic" -> CobblemonCardsConfig.fishingLootClassicChance;
+            case "parting_gifts" -> CobblemonCardsConfig.partingGiftsBoosterChance;
+            case "rad_gyms" -> CobblemonCardsConfig.radGymsBoosterChance;
             default -> 0.0;
         };
     }
+
 }

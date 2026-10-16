@@ -24,7 +24,7 @@ public final class CompatBoosterModifier extends LootModifier {
     @Override
     protected ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
         for (CompatReward reward : CompatManager.rewardsForTable(context.getQueriedLootTableId())) {
-            ItemStack booster = BoosterRewardHelper.roll(reward, context.getRandom());
+            ItemStack booster = BoosterRewardHelper.roll(reward, context);
             if (!booster.isEmpty()) {
                 generatedLoot.add(booster);
             }

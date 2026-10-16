@@ -49,7 +49,7 @@ public final class CompatBoosterLootEntry extends LootPoolSingletonContainer {
     @Override protected void createItemStack(Consumer<ItemStack> output, LootContext context) {
         CompatReward reward = CompatManager.reward(rewardId);
         if (reward == null) return;
-        ItemStack stack = BoosterRewardHelper.roll(reward, context.getRandom());
+        ItemStack stack = BoosterRewardHelper.roll(reward, context);
         if (!stack.isEmpty()) output.accept(stack);
     }
 }

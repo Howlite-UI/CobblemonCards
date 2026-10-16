@@ -34,17 +34,33 @@ public final class CompatManager {
         detected = Set.copyOf(present);
         initialized = true;
         if (present.contains(RUSTLING_SPOTS)) RustlingSpotsCompat.register();
+        if (present.contains(RCT)) RctCompat.initialize();
+        if (present.contains(RAD_GYMS)) RadGymsCompat.initialize();
     }
 
     public static boolean isDetected(CompatConfig.Integration integration) { return detected.contains(integration); }
 
     public static List<CompatReward> rewardsForTable(ResourceLocation table) {
+        if (isRctTable(table)) return List.of(rctReward(table));
         return table == null ? List.of() : TABLE_REWARDS.getOrDefault(table, List.of());
     }
 
     public static CompatReward reward(String id) {
+        ResourceLocation table = id == null ? null : ResourceLocation.tryParse(id);
+        if (isRctTable(table)) return rctReward(table);
         return TABLE_REWARDS.values().stream().flatMap(List::stream)
                 .filter(reward -> reward.id().equals(id)).findFirst().orElse(null);
+    }
+
+    /** RCT derives these table paths from trainer definitions. Generic item/category tables are excluded. */
+    public static boolean isRctTable(ResourceLocation table) {
+        return table != null && table.getNamespace().equals("rctmod")
+                && table.getPath().startsWith("trainers/") && table.getPath().length() > "trainers/".length();
+    }
+
+    private static CompatReward rctReward(ResourceLocation table) {
+        // Carry the table ID through the Fabric entry codec so nested group tables can be rejected.
+        return new CompatReward(table.toString(), RCT, CLASSIC_OR_GENERATION);
     }
 
     private static Map<ResourceLocation, List<CompatReward>> createRules() {
@@ -65,6 +81,8 @@ public final class CompatManager {
         add(rules, "cobblemon:fishing/pokerod", new CompatReward("fishing_water", FISHING_LOOT,
                 BoosterRewardHelper.Selection.fromToken("water")));
         add(rules, "cobblemon:fishing/pokerod", new CompatReward("fishing_classic", FISHING_LOOT, CLASSIC));
+        add(rules, "releaserewards:rewards/global", new CompatReward("parting_gifts", PARTING_GIFTS, CLASSIC));
+        add(rules, "rad_gyms:gyms/default/shared_loot_table", new CompatReward("rad_gyms", RAD_GYMS, CLASSIC));
         rules.replaceAll((id, rewards) -> List.copyOf(rewards));
         return Map.copyOf(rules);
     }

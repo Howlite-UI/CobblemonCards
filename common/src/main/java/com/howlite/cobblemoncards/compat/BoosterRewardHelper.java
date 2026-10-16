@@ -9,6 +9,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -53,8 +54,16 @@ public final class BoosterRewardHelper {
         }
     }
 
-    public static ItemStack roll(CompatReward reward, RandomSource random) {
-        return reward.isEnabled() ? roll(reward.chance(), reward.selection(), random) : ItemStack.EMPTY;
+    public static ItemStack roll(CompatReward reward, LootContext context) {
+        if (!reward.isEnabled()) return ItemStack.EMPTY;
+        Selection selection = reward.selection();
+        if (reward.integration() == CompatConfig.Integration.RCT
+                && !RctCompat.isRootReward(context, ResourceLocation.parse(reward.id()))) return ItemStack.EMPTY;
+        if (reward.integration() == CompatConfig.Integration.RAD_GYMS) {
+            selection = RadGymsCompat.selection(context);
+            if (selection == null) return ItemStack.EMPTY;
+        }
+        return roll(reward.chance(), selection, context.getRandom());
     }
 
     public static ItemStack roll(double percentage, Selection selection, RandomSource random) {
