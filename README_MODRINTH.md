@@ -123,8 +123,11 @@ These are the main settings; the in-game screen also exposes per-stat multiplier
 | `masterAlbumGivesStats` | `false` | Boolean | Allow the Master Album to grant passive bonuses. |
 | `godPackTicketChance` | `1.0` | `0.0`–`100.0` | Ticket drop chance when opening a booster (%). |
 | `cardDropChance` | `1.0` | `0.0`–`100.0` | Card drop chance from defeated/captured Pokémon (%). |
-| `enableBoosterChestSpawn` | `true` | Boolean | Add classic boosters to structure chests. |
-| `boosterChestSpawnChance` | `2.0` | `0.0`–`100.0` | Chance to find a classic booster in a structure chest (%). |
+| `enableBoosterChestSpawn` | `true` | Boolean | Add classic or generation boosters to eligible structure container loot tables. |
+| `boosterChestSpawnChance` | `2.0` | `0.0`–`100.0` | Chance per eligible structure container loot table generation (%). |
+| `additionalBoosterLootTables` | `[]` | List of namespaced IDs | Allow verified custom structure container loot tables. |
+| `excludedBoosterLootTables` | `[]` | List of namespaced IDs | Exclude tables, including automatically detected or explicitly allowed tables. |
+| `debugBoosterLootTables` | `false` | Boolean | Log inspected table IDs, eligibility reasons, and pool injection. |
 
 Restoration duration uses the server settings: `restorerBaseProcessTime + (targetGrade - 2) × restorerProcessTimePerGrade`. At 20 ticks per second, the defaults give **3 seconds for grade 2**, **12 seconds for grade 5**, and **27 seconds for grade 10**. Duration depends on the target grade. New timing settings apply to new operations; an active restoration keeps its original duration and dust cost.
 
@@ -135,6 +138,43 @@ Removing or replacing the card cancels restoration. Removing required dust pause
 <p align="center">
   <img src="https://raw.githubusercontent.com/Howlite-UI/CobblemonCards/main/common/src/main/resources/assets/cobblemon-cards/textures/graphics/cobblemon_divider.png" alt="Divider" />
 </p>
+
+## Structure container boosters
+
+Booster packs naturally appear in eligible vanilla and modded structure containers, including chests and barrels. The default chance remains **2%**, controlled by `enableBoosterChestSpawn` and `boosterChestSpawnChance`. Each injected pool makes one roll and keeps the existing selection weights: classic booster **10**, each generation 1–9 booster **3**. Compatibility settings do not add extra rolls to the same table or change these weights.
+
+Eligibility follows the **loot table**, so a barrel using an eligible table works too. Vanilla dungeon chests use `minecraft:chests/simple_dungeon`. Trial Chambers already include eligible tables such as `minecraft:chests/trial_chambers/entrance` (including sticks and honeycomb), `minecraft:chests/trial_chambers/corridor` (barrels, including honeycomb), `minecraft:chests/trial_chambers/intersection_barrel`, and `minecraft:chests/trial_chambers/supply`. A container with preset `Items` and no `LootTable` does not run a loot table, so this feature cannot add a booster to it.
+
+Two additional verified natural container tables receive automatic support by exact ID: `minecraft:dispensers/trial_chambers/corridor` and `minecraft:dispensers/trial_chambers/chamber`. The registered `minecraft:dispensers/trial_chambers/water` table has no verified natural caller and is not selected automatically. Single-slot decorated pots are excluded because an extra stack could displace the original loot. The shared `minecraft:chests/trial_chambers/reward` table keeps one pool for natural chests; its six reward helpers and ominous reward root are protected against injection, and generation at vanilla vaults or trial spawners is blocked.
+
+Cobblemon also nests its own loot helpers inside vanilla structure tables. Its 17 verified injection helpers, such as `cobblemon:injection/chests/simple_dungeon`, are protected against a second booster pool. The parent `minecraft:chests/simple_dungeon` remains eligible, and Cobblemon's existing item pools are preserved. This prevents nested helper calls from increasing the booster chance.
+
+At 2%, **98% of eligible rolls contain no booster**. Even after 50 independent eligible rolls, the chance of finding none is about **36.4%**; after 100 it is about **13.3%**. One booster per 50 rolls is an average, not a guarantee. Finding ordinary items or opening several containers without a booster does not establish that injection failed.
+
+Automatic matching recognizes IDs whose path starts with `chests/` or contains `/chests/`, such as `minecraft:chests/ancient_city`, [Repurposed Structures' `repurposed_structures:chests/dungeons/badlands`](https://github.com/TelepathicGrunt/RepurposedStructures/blob/1.21-Arch/common/src/main/resources/data/repurposed_structures/loot_table/chests/dungeons/badlands.json), or [YUNG's Better Dungeons' `betterdungeons:skeleton_dungeon/chests/common`](https://github.com/YUNG-GANG/YUNGs-Better-Dungeons/blob/1.21.1/Common/src/main/resources/data/betterdungeons/loot_table/skeleton_dungeon/chests/common.json), plus the two exact dispenser exceptions above. Block, entity, fishing, gameplay and spawner paths, known protected tables, and incompatible loot table types are rejected. Placing and breaking normal, trapped, or Ender Chests does not produce boosters through this system, even if their block loot tables are added to the allowlist.
+
+A table's name and declared type cannot prove that it is used by a naturally generated structure. Some mods use other paths, reuse tables across several reward sources, or generate container contents without a loot table. CobblemonCards deliberately does not match arbitrary occurrences of `chest`, `loot`, `treasure`, `reward`, or `dungeon`.
+
+For a verified custom structure container table, edit these entries in the **server's** `config/cobblemon-cards.json` while the server is stopped, then restart it. This is a partial example; merge the entries into the existing JSON object:
+
+```json
+{
+  "additionalBoosterLootTables": [
+    "bca:general/attic",
+    "bca:general/kitchen"
+  ],
+  "excludedBoosterLootTables": [
+    "examplemod:chests/special_reward"
+  ],
+  "debugBoosterLootTables": false
+}
+```
+
+The `bca:general/attic` and `bca:general/kitchen` entries were verified in the official [Cobbleverse 1.7.42 release](https://modrinth.com/modpack/cobbleverse/version/1.7.42); they are opt-in examples, not defaults or a guarantee for other pack versions. The exclusion ID is a placeholder. Both lists default to empty. Use exact lowercase `namespace:path` IDs, without a `.json` extension. Invalid entries are ignored with warnings; missing tables do not crash loading. An exclusion overrides automatic detection and the allowlist; protected loot sources remain blocked regardless of configuration. Duplicate entries do not inject another pool. If a structure's table calls another table, configure only the intended reward table and exclude any eligible parent or child as needed to avoid separate rolls from distinct tables.
+
+Set `debugBoosterLootTables` to `true` to log all inspected IDs, why they qualify, exclusions, the configured `chancePercent`, and whether a booster pool was added. An `injected=true` result with `chancePercent=2.0` confirms installation of a 2% pool; it does not report a successful player roll. It does not log individual player rolls. A logged ID proves that a table was loaded, not that a structure uses it. With operator permissions, inspect an unopened generated container using `/data get block <x> <y> <z> LootTable`; once loot is generated, that field may be gone. Also inspect the mod or datapack's `data/<namespace>/loot_table/<path>.json` files (singular `loot_table` in Minecraft 1.21.1), structure NBT, or source code to verify its uses before allowing it.
+
+The same matching rules run on Fabric and NeoForge. `/reload` reapplies the currently loaded settings to reloaded loot tables; it does not reread file edits. Existing worlds need no conversion. Containers whose loot has already been generated keep their items; unopened containers use the active table when their contents are generated. There is no separate CobblemonCards datapack allowlist in this patch. See the [structure loot compatibility notes](https://github.com/Howlite-UI/CobblemonCards/blob/main/docs/STRUCTURE_CHEST_LOOT.md) for API limits and verified research.
 
 ## Optional survival booster rewards
 
@@ -240,7 +280,7 @@ If you want to modify the source code or build the mod manually:
 
 Fabric development runs explicitly include the GraalJS, ICU, and MongoDB libraries bundled by Cobblemon. Their versions match the [official Cobblemon addon template](https://gitlab.com/cable-mc/cobblemon-mdks/-/blob/master/fabric-java/build.gradle.kts); NeoForge discovers these libraries from Cobblemon's nested JARs. Player installations receive them through Cobblemon itself.
 
-Both loader builds pass against Cobblemon **1.8.2**, along with **47 automated tests**. See the [compatibility guide](https://github.com/Howlite-UI/CobblemonCards/blob/main/docs/OPTIONAL_INTEGRATIONS.md) for the separate startup results with optional addons. Earlier Cobblemon **1.8.1** validation initialized both loaders and Showdown, loaded a NeoForge test world with all 1,025 species, and passed targeted headless checks for restoration (38 checks) and the shiny event (15 checks). Those historical checks have not been repeated as gameplay tests on 1.8.2. Player-driven rewards, client recipe viewers, multiplayer, existing-world upgrades and large-collection performance still require playtesting before publication.
+The prepared-release baseline passed both loader builds against Cobblemon **1.8.2** and **47 automated tests**. Additional structure container checks are recorded in the [structure loot compatibility notes](https://github.com/Howlite-UI/CobblemonCards/blob/main/docs/STRUCTURE_CHEST_LOOT.md); see the [compatibility guide](https://github.com/Howlite-UI/CobblemonCards/blob/main/docs/OPTIONAL_INTEGRATIONS.md) for separate startup results with optional addons. Earlier Cobblemon **1.8.1** validation initialized both loaders and Showdown, loaded a NeoForge test world with all 1,025 species, and passed targeted headless checks for restoration (38 checks) and the shiny event (15 checks). Those historical checks have not been repeated as gameplay tests on 1.8.2. Player-driven rewards, client recipe viewers, multiplayer, existing-world upgrades and large-collection performance still require playtesting before publication.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Howlite-UI/CobblemonCards/main/common/src/main/resources/assets/cobblemon-cards/textures/graphics/cobblemon_divider.png" alt="Divider" />

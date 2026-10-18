@@ -17,6 +17,8 @@ import com.howlite.cobblemoncards.event.BinderSpawnModifier;
 import com.howlite.cobblemoncards.event.ModEvents;
 import com.howlite.cobblemoncards.item.ModCreativeTabs;
 import com.howlite.cobblemoncards.item.ModItems;
+import com.howlite.cobblemoncards.loot.BoosterChestLoot;
+import com.howlite.cobblemoncards.loot.BoosterChestLootCondition;
 import com.howlite.cobblemoncards.item.custom.loot.BoosterLootTable;
 import com.howlite.cobblemoncards.manager.BoosterPackManager;
 import com.howlite.cobblemoncards.menu.AdvancedHoloProjectorMenu;
@@ -39,10 +41,6 @@ import net.minecraft.world.entity.npc.VillagerTrades;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
-import net.minecraft.world.level.storage.loot.LootPool;
-import net.minecraft.world.level.storage.loot.entries.LootItem;
-import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
@@ -132,6 +130,8 @@ public class NeoForgeCobblemonCards {
             com.howlite.cobblemoncards.sound.ModSounds.registerSounds();
         } else if (event.getRegistryKey().equals(Registries.LOOT_POOL_ENTRY_TYPE)) {
             CompatBoosterLootEntry.register();
+        } else if (event.getRegistryKey().equals(Registries.LOOT_CONDITION_TYPE)) {
+            BoosterChestLootCondition.register();
         }
     }
 
@@ -367,26 +367,8 @@ public class NeoForgeCobblemonCards {
 
     @SubscribeEvent
     public void onLootTableLoad(LootTableLoadEvent event) {
-        if (CobblemonCardsConfig.enableBoosterChestSpawn && event.getName() != null && isChestLootTable(event.getName())) {
-            float chance = CobblemonCardsConfig.boosterChestSpawnChance / 100.0f;
-            if (chance > 0.0f) {
-                LootPool pool = LootPool.lootPool()
-                        .setRolls(ConstantValue.exactly(1))
-                        .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK).setWeight(10))
-                        .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN1).setWeight(3))
-                        .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN2).setWeight(3))
-                        .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN3).setWeight(3))
-                        .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN4).setWeight(3))
-                        .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN5).setWeight(3))
-                        .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN6).setWeight(3))
-                        .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN7).setWeight(3))
-                        .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN8).setWeight(3))
-                        .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN9).setWeight(3))
-                        .when(LootItemRandomChanceCondition.randomChance(chance))
-                        .build();
-                event.getTable().addPool(pool);
-            }
-        }
+        BoosterChestLoot.inject(event.getName(), event.getTable().getParamSet(),
+                event.getTable(), event.getTable()::addPool);
     }
 
 
@@ -397,12 +379,4 @@ public class NeoForgeCobblemonCards {
         event.addListener((ResourceManagerReloadListener) FakemonWhitelistReloader::loadFrom);
     }
 
-    private static boolean isChestLootTable(ResourceLocation location) {
-        if (location == null) return false;
-        String path = location.getPath().toLowerCase(java.util.Locale.ROOT);
-        // Block drop tables (blocks/chest, blocks/trapped_chest, ...) must never match
-        if (path.startsWith("blocks/")) return false;
-        // But accept chest loot tables (chests/simple_dungeon, chests/village/village_weaponsmith, mymod:structures/chests/ruins, ...)
-        return path.startsWith("chests/") || path.contains("/chests/");
-    }
 }

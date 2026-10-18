@@ -43,6 +43,18 @@ public class CobblemonCardsConfig extends MidnightConfig {
     @Entry(category = "general", min = 0.0f, max = 100.0f)
     public static float boosterChestSpawnChance = 2.0f;
 
+    /** Additional namespaced structure-container loot tables; protected loot sources remain excluded. */
+    @Entry(category = "general")
+    public static List<String> additionalBoosterLootTables = new ArrayList<>();
+
+    /** Exact loot table IDs to exclude, overriding automatic matching and additional entries. */
+    @Entry(category = "general")
+    public static List<String> excludedBoosterLootTables = new ArrayList<>();
+
+    /** Log table eligibility and injection during loot table loading, without logging loot rolls. */
+    @Entry(category = "general")
+    public static boolean debugBoosterLootTables = false;
+
     // --- Player ---
 
     @Comment(centered = true, category = "player")

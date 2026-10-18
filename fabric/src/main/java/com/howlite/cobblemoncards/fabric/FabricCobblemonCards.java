@@ -2,7 +2,6 @@ package com.howlite.cobblemoncards.fabric;
 
 import com.cobblemon.mod.common.api.spawning.spawner.PlayerSpawnerFactory;
 import com.howlite.cobblemoncards.CobblemonCards;
-import com.howlite.cobblemoncards.CobblemonCardsConfig;
 import com.howlite.cobblemoncards.attachment.PlayerDataAttachments;
 import com.howlite.cobblemoncards.block.ModBlocks;
 import com.howlite.cobblemoncards.block.entity.AdvancedHoloProjectorBlockEntity;
@@ -15,6 +14,8 @@ import com.howlite.cobblemoncards.compat.CompatManager;
 import com.howlite.cobblemoncards.fabric.compat.FabricLootCompat;
 import com.howlite.cobblemoncards.event.BinderSpawnModifier;
 import com.howlite.cobblemoncards.item.ModItems;
+import com.howlite.cobblemoncards.loot.BoosterChestLoot;
+import com.howlite.cobblemoncards.loot.BoosterChestLootCondition;
 import com.howlite.cobblemoncards.item.custom.loot.BoosterLootTable;
 import com.howlite.cobblemoncards.manager.BoosterPackManager;
 import com.howlite.cobblemoncards.menu.AdvancedHoloProjectorMenu;
@@ -42,10 +43,6 @@ import net.minecraft.world.entity.npc.VillagerTrades;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
-import net.minecraft.world.level.storage.loot.LootPool;
-import net.minecraft.world.level.storage.loot.entries.LootItem;
-import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 
 import java.util.List;
 
@@ -62,6 +59,7 @@ public class FabricCobblemonCards implements ModInitializer {
 
         CompatManager.initialize(net.fabricmc.loader.api.FabricLoader.getInstance()::isModLoaded);
         FabricLootCompat.register();
+        BoosterChestLootCondition.register();
 
         // Enregistrer les Accessories pour les Binders et Albums
         if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("accessories")) {
@@ -94,25 +92,9 @@ public class FabricCobblemonCards implements ModInitializer {
 
         // 8. Modifier les tables de butin
         LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {
-            if (CobblemonCardsConfig.enableBoosterChestSpawn && key != null && isChestLootTable(key.location())) {
-                float chance = CobblemonCardsConfig.boosterChestSpawnChance / 100.0f;
-                if (chance > 0.0f) {
-                    LootPool.Builder poolBuilder = LootPool.lootPool()
-                            .setRolls(ConstantValue.exactly(1))
-                            .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK).setWeight(10))
-                            .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN1).setWeight(3))
-                            .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN2).setWeight(3))
-                            .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN3).setWeight(3))
-                            .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN4).setWeight(3))
-                            .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN5).setWeight(3))
-                            .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN6).setWeight(3))
-                            .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN7).setWeight(3))
-                            .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN8).setWeight(3))
-                            .add(LootItem.lootTableItem(ModItems.BOOSTER_PACK_GEN9).setWeight(3))
-                            .conditionally(LootItemRandomChanceCondition.randomChance(chance).build());
-                    tableBuilder.pool(poolBuilder.build());
-                }
-            }
+            // The builder exposes the declared context through a snapshot, not structure provenance.
+            BoosterChestLoot.inject(key == null ? null : key.location(),
+                    tableBuilder.build().getParamSet(), tableBuilder, tableBuilder::pool);
         });
 
         // 9. Le modificateur de spawn du Binder est enregistré dans CobblemonCards.init()
@@ -342,12 +324,4 @@ public class FabricCobblemonCards implements ModInitializer {
         });
     }
 
-    private static boolean isChestLootTable(net.minecraft.resources.ResourceLocation location) {
-        if (location == null) return false;
-        String path = location.getPath().toLowerCase(java.util.Locale.ROOT);
-        // Block drop tables (blocks/chest, blocks/trapped_chest, ...) must never match
-        if (path.startsWith("blocks/")) return false;
-        // But accept chest loot tables (chests/simple_dungeon, chests/village/village_weaponsmith, mymod:structures/chests/ruins, ...)
-        return path.startsWith("chests/") || path.contains("/chests/");
-    }
 }
