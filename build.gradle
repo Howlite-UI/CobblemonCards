@@ -3,6 +3,34 @@ plugins {
     id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
     id 'net.neoforged.moddev' version "${moddev_version}" apply false
     id 'org.jetbrains.kotlin.jvm' version "${kotlin_version}" apply false
+    id 'me.modmuss50.mod-publish-plugin' version "${mod_publish_version}" apply false
+}
+
+// Extracts the "## <version>" section from CHANGELOG.md for Modrinth / CurseForge / GitHub releases.
+ext.extractChangelog = { String targetVersion ->
+    def changelogFile = rootProject.file("CHANGELOG.md")
+    if (!changelogFile.exists()) {
+        return "Release ${targetVersion}"
+    }
+    def lines = changelogFile.readLines("UTF-8")
+    def sb = new StringBuilder()
+    boolean capturing = false
+    for (String line : lines) {
+        if (line.startsWith("## ")) {
+            if (capturing) {
+                break
+            }
+            if (line.contains(targetVersion)) {
+                capturing = true
+                continue
+            }
+        }
+        if (capturing) {
+            sb.append(line).append("\n")
+        }
+    }
+    def result = sb.toString().trim()
+    return result.isEmpty() ? "Release ${targetVersion}" : result
 }
 
 allprojects {

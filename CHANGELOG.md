@@ -2,20 +2,29 @@
 
 Changes by version. The V2 entry describes the prepared beta; it is not a stable-release announcement.
 
-## 2.1.0 — Optional survival rewards (prepared release)
+## 2.1.0 — Cobblemon 1.8.2, Survival Rewards & Performance Update
 
 **Target:** Minecraft 1.21.1, Java 21, Cobblemon 1.8.2; Fabric and NeoForge.
 
-- Updated the Fabric and NeoForge compilation targets and minimum Cobblemon dependency to **1.8.2**. Existing compatible loader, Kotlin, Accessories, owo-lib, Architectury, Cloth Config and MidnightLib versions are retained.
-- Preserved optional Parting Gifts reward code: 1% chance for a classic booster through its global loot table. Parting Gifts 3.0.2 and 3.0.3 cannot start with Cobblemon 1.8.2 on either loader because they call a removed `ElementalType` constructor. These versions are rejected with an incompatibility message and must be removed before upgrading; support awaits an upstream fix.
-- Added optional Rad Gyms 0.5.0 rewards: 10% chance in its default shared gym reward table, matching the active gym's type when available.
-- Added optional Radical Cobblemon Trainers 0.19.2-beta rewards: 5% chance for a classic or generation booster in trainer victory loot. The actual root table is checked so nested trainer/group tables cannot duplicate rolls.
-- Added independent server toggles and percentage settings in the existing Compatibility tab, with English/French labels.
-- Updated the optional addon dependency setup to **GeckoLib 4.9.3**, **RCT API 0.16.2-beta** and **Forge Config API Port 21.1.6** on Fabric. RCT API 0.16.2-beta contains the Iron Ball compatibility fix required for Cobblemon 1.8.2; older 0.16.1-beta installations should be replaced.
-- Registered NeoForge plugin discovery for the REI and EMI Card Recycler integrations; client interfaces still require in-game validation.
-- No optional addon is required by CobblemonCards; native rewards, consumption and delivery remain owned by the addons. No addon configuration files are overwritten.
+### Added
+- Updated Fabric and NeoForge builds and minimum Cobblemon dependency to **Cobblemon 1.8.2**.
+- Added configurable structure container booster loot compatibility (`additionalBoosterLootTables`, `excludedBoosterLootTables`, `debugBoosterLootTables`), including automatic support for vanilla Trial Chamber dispensers and custom modpack loot tables (e.g. Cobbleverse).
+- Added optional server-side booster rewards for **Rad Gyms 0.5.0** (10% chance in gym reward tables, matching gym type when available) and **Radical Cobblemon Trainers 0.19.2-beta** (5% chance in trainer victory loot), with independent toggles and percentages in the Compatibility config tab.
+- Added `keepBinderOnDeath` config option (enabled by default) so equipped Binders and Master Albums are kept on death in the Accessories slot.
+- Added all 28 **Unown** letter/symbol card forms (`unown_a`–`unown_z`, `!`, `?`) to booster pack generation and `/givecard`.
 
-Both loader builds and **47 automated tests** pass against Cobblemon 1.8.2. Startup results are recorded in [the compatibility guide](docs/OPTIONAL_INTEGRATIONS.md). The 38 restoration and 15 shiny-event headless checks in the V2 beta entry below remain historical Cobblemon 1.8.1 results. Player-driven rewards, client recipe viewers and multiplayer checks remain required before publication.
+### Fixed
+- **Accessories / Trinkets (#10):** Removed legacy Trinkets/Curios slot definitions that caused a phantom unusable `trinkets.slot.legs.binder` slot when using Accessories Compatibility Layer, and faded the Card Binder slot icon to match Accessories' translucent grey style.
+- **Booster Chest Dupe:** Stopped vanilla and modded chest blocks from dropping booster packs when broken.
+- **Player Card Skins:** Fixed player cards displaying default Steve/Alex skins on servers by resolving signed skins from online tablist `PlayerInfo` and an asynchronous Mojang profile cache for offline players.
+- **Missing Pokémon Sprites:** Fixed Clauncher and Clawitzer cards displaying a placeholder sprite by supporting `_left` / `_right` entity icon suffixes.
+- **Parting Gifts / RCT API Compatibility:** Declared explicit incompatibilities for Parting Gifts 3.0.2/3.0.3 (incompatible with Cobblemon 1.8.2) and RCT API `< 0.16.2-beta`.
+- Registered NeoForge plugin discovery for REI and EMI Card Recycler integrations.
+
+### Performance
+- **Master Album & Card Cabinet (FPS & TPS):** Replaced 12,000 registered `Slot` instances in `BinderMenu` and `CardCabinetMenu` with 12 paged virtual slots (48 slots total including player inventory), eliminating severe FPS drops in `CardCabinetScreen` and server TPS drops in `broadcastChanges()`.
+- **Card Inventory Rendering:** Added a Pokémon sprite texture lookup cache in `CardItemRenderer` (auto-invalidated on resource reload) and 30 FPS time-bucket throttling in `ProceduralTextureCache` for the CPU shader fallback (Iris active in-world).
+- Cleaned up unused shader uniform/sampler declarations in `card_procedural_bg.json` and `card_procedural_holo.json`.
 
 ## 2.0.0-beta.1 — V2 beta
 
