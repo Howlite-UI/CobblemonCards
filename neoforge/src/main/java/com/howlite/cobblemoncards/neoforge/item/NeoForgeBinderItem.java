@@ -1,12 +1,15 @@
 package com.howlite.cobblemoncards.neoforge.item;
 
+import com.howlite.cobblemoncards.CobblemonCardsConfig;
 import com.howlite.cobblemoncards.item.custom.BinderItem;
 import com.howlite.cobblemoncards.item.custom.BinderTier;
 import com.howlite.cobblemoncards.component.CardStat;
 import io.wispforest.accessories.api.Accessory;
+import io.wispforest.accessories.api.DropRule;
 import io.wispforest.accessories.api.attributes.AccessoryAttributeBuilder;
 import io.wispforest.accessories.api.slot.SlotReference;
 import net.minecraft.core.Holder;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
@@ -56,5 +59,10 @@ public class NeoForgeBinderItem extends BinderItem implements Accessory {
     @Override
     public boolean canEquip(ItemStack stack, SlotReference reference) {
         return reference.slotName().equals("binder");
+    }
+
+    @Override
+    public DropRule getDropRule(ItemStack stack, SlotReference reference, DamageSource source) {
+        return CobblemonCardsConfig.keepBinderOnDeath ? DropRule.KEEP : DropRule.DEFAULT;
     }
 }

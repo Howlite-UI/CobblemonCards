@@ -201,9 +201,8 @@ public class BinderScreen extends AbstractContainerScreen<BinderMenu> {
         this.isRendering = false;
 
         this.hoveredSlot = null;
-        int activeStart = this.menu.getCurrentPage() * BinderMenu.SLOTS_PER_PAGE;
-        int activeEnd = Math.min(activeStart + BinderMenu.SLOTS_PER_PAGE, this.menu.slots.size());
-        for (int i = activeStart; i < activeEnd; i++) {
+        int cardSlotsCount = Math.min(BinderMenu.SLOTS_PER_PAGE, this.menu.slots.size());
+        for (int i = 0; i < cardSlotsCount; i++) {
             Slot slot = this.menu.slots.get(i);
             if (slot.isActive() && this.isHovering(slot.x - CARD_OFFSET_X, slot.y - CARD_OFFSET_Y, CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, mouseX, mouseY)) {
                 this.hoveredSlot = slot;
@@ -211,8 +210,7 @@ public class BinderScreen extends AbstractContainerScreen<BinderMenu> {
             }
         }
         if (this.hoveredSlot == null) {
-            int totalBinderSlots = this.menu.getMaxPages() * BinderMenu.SLOTS_PER_PAGE;
-            for (int i = totalBinderSlots; i < this.menu.slots.size(); i++) {
+            for (int i = BinderMenu.SLOTS_PER_PAGE; i < this.menu.slots.size(); i++) {
                 Slot slot = this.menu.slots.get(i);
                 if (slot.isActive() && this.isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY)) {
                     this.hoveredSlot = slot;
@@ -221,7 +219,7 @@ public class BinderScreen extends AbstractContainerScreen<BinderMenu> {
             }
         }
 
-        if (this.hoveredSlot != null && this.hoveredSlot.index < this.menu.getMaxPages() * BinderMenu.SLOTS_PER_PAGE) {
+        if (this.hoveredSlot != null && this.hoveredSlot.index < BinderMenu.SLOTS_PER_PAGE) {
             int x = this.leftPos + this.hoveredSlot.x - CARD_OFFSET_X;
             int y = this.topPos + this.hoveredSlot.y - CARD_OFFSET_Y;
             graphics.fill(x, y, x + CARD_SLOT_WIDTH, y + CARD_SLOT_HEIGHT, -2130706433);
@@ -240,9 +238,8 @@ public class BinderScreen extends AbstractContainerScreen<BinderMenu> {
             return false;
         }
         if (width == 16 && height == 16) {
-            int activeStart = this.menu.getCurrentPage() * BinderMenu.SLOTS_PER_PAGE;
-            int activeEnd = Math.min(activeStart + BinderMenu.SLOTS_PER_PAGE, this.menu.slots.size());
-            for (int i = activeStart; i < activeEnd; i++) {
+            int cardSlotsCount = Math.min(BinderMenu.SLOTS_PER_PAGE, this.menu.slots.size());
+            for (int i = 0; i < cardSlotsCount; i++) {
                 Slot slot = this.menu.slots.get(i);
                 if (slot.x == x && slot.y == y) {
                     return super.isHovering(x - CARD_OFFSET_X, y - CARD_OFFSET_Y, CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, mouseX, mouseY);
@@ -272,8 +269,9 @@ public class BinderScreen extends AbstractContainerScreen<BinderMenu> {
         graphics.drawString(this.font, Component.translatable("gui.cobblemon-cards.binder.stats_bonus"), x + 10, y + 10, 0xFFFFFF, true);
 
         Map<CardStat, Float> stats = new HashMap<>();
-        for (int i = 0; i < this.menu.getMaxPages() * BinderMenu.SLOTS_PER_PAGE; i++) {
-            ItemStack stack = this.menu.getSlot(i).getItem();
+        net.minecraft.world.Container binderContainer = this.menu.getContainer();
+        for (int i = 0; i < binderContainer.getContainerSize(); i++) {
+            ItemStack stack = binderContainer.getItem(i);
             CardData data = stack.get(ModDataComponents.CARD_DATA);
             if (data != null && !com.howlite.cobblemoncards.util.CardUtil.isCosmeticCard(data.pokemonId())) {
                 if (data.stat() != null) {
@@ -314,7 +312,7 @@ public class BinderScreen extends AbstractContainerScreen<BinderMenu> {
     protected void renderSlot(GuiGraphics graphics, Slot slot) {
         if (!slot.isActive()) return;
 
-        if (slot.index < this.menu.getMaxPages() * BinderMenu.SLOTS_PER_PAGE) {
+        if (slot.index < BinderMenu.SLOTS_PER_PAGE) {
             ItemStack stack = slot.getItem();
             if (!stack.isEmpty()) {
                 String searchTerm = searchBox.getValue().toLowerCase();

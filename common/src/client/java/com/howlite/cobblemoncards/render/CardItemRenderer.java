@@ -17,8 +17,19 @@ import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix4f;
 import com.cobblemon.mod.common.pokemon.Species;
 import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.yggdrasil.ProfileResult;
+import net.minecraft.Util;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.PlayerInfo;
+
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CardItemRenderer {
+
+    private static final ConcurrentHashMap<String, GameProfile> PLAYER_PROFILE_CACHE = new ConcurrentHashMap<>();
+    private static final Set<String> PLAYER_PROFILE_PENDING = ConcurrentHashMap.newKeySet();
 
     private static final ResourceLocation TEXTURE_STARS = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/effect/foil_stars.png");
     private static final ResourceLocation TEXTURE_GLINT = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/effect/glint.png");
@@ -173,11 +184,11 @@ public class CardItemRenderer {
                         } else {
                         // 2. Essayer avec les suffixes courants (genders, formes, segments, ou numéros de sprite)
                         String[] suffixes = {
-                            "_1", "_male", "_m", "_female", "_f", "_chest", "_roaming", "_zero", "_hero", 
+                            "_1", "_male", "_a", "_m", "_female", "_f", "_left", "_right", "_chest", "_roaming", "_zero", "_hero", 
                             "_solo", "_school", "_amped", "_lowkey", "_curly", "_droopy", "_stretchy", 
                             "_two_segment", "_three_segment", "_green", "_blue", "_yellow", "_gray", 
                             "_spring", "_summer", "_autumn", "_winter", "_west", "_east", 
-                            "_redstripe", "_bluestripe", "_whitestripe", "_a", "_shadow", 
+                            "_redstripe", "_bluestripe", "_whitestripe", "_shadow", 
                             "_incarnate", "_therian", "_vanilla"
                         };
                         
@@ -298,7 +309,7 @@ public class CardItemRenderer {
                 uuid = java.util.UUID.nameUUIDFromBytes(nameAndUuid.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 name = nameAndUuid;
             }
-            ResourceLocation skinTex = Minecraft.getInstance().getSkinManager().getInsecureSkin(new GameProfile(uuid, name)).texture();
+            ResourceLocation skinTex = resolvePlayerSkin(uuid, name);
             
             float headSize = pokeHeight * 0.7f;
             
@@ -2935,8 +2946,53 @@ public class CardItemRenderer {
         consumer.addVertex(matrix, -hw,  hh, 0).setColor(r, g, b, a).setUv(u0, v0).setOverlay(overlay).setLight(light).setNormal(0, 0, 1);
     }
 
+    private static ResourceLocation resolvePlayerSkin(UUID uuid, String name) {
+        Minecraft mc = Minecraft.getInstance();
+
+        // 1. Online player on the current server/world (already has signed skin textures from tablist)
+        ClientPacketListener connection = mc.getConnection();
+        if (connection != null) {
+            PlayerInfo info = connection.getPlayerInfo(uuid);
+            if (info == null && name != null && !name.isEmpty()) {
+                info = connection.getPlayerInfo(name);
+            }
+            if (info != null) {
+                return info.getSkin().texture();
+            }
+        }
+
+        // 2. Local player fallback
+        if (mc.player != null && uuid.equals(mc.player.getUUID())) {
+            return mc.player.getSkin().texture();
+        }
+
+        // 3. Cached profile fetched from Mojang session service (for offline players)
+        String cacheKey = uuid.toString();
+        GameProfile cached = PLAYER_PROFILE_CACHE.get(cacheKey);
+        if (cached != null) {
+            return mc.getSkinManager().getInsecureSkin(cached).texture();
+        }
+
+        // 4. Kick off a one-time async profile fetch for real v4 UUIDs
+        if (uuid.version() == 4 && PLAYER_PROFILE_PENDING.add(cacheKey)) {
+            Util.backgroundExecutor().execute(() -> {
+                try {
+                    ProfileResult result = mc.getMinecraftSessionService().fetchProfile(uuid, false);
+                    if (result != null && result.profile() != null) {
+                        PLAYER_PROFILE_CACHE.put(cacheKey, result.profile());
+                    }
+                } catch (Exception ignored) {
+                    // Keep default skin if offline/rate-limited
+                }
+            });
+        }
+
+        return mc.getSkinManager().getInsecureSkin(new GameProfile(uuid, name)).texture();
+    }
+
     private static String getBaseSpeciesName(String name) {
         String lower = name.toLowerCase();
+        if (lower.startsWith("unown_") || lower.startsWith("unown-")) return "unown";
         if (lower.startsWith("eternamax_")) return "eternatus";
         if (lower.endsWith("_rapidstrike_gmax")) return "urshifu";
         if (lower.endsWith("_alolan")) return lower.substring(0, lower.length() - "_alolan".length());

@@ -193,17 +193,32 @@ public class CardCabinetScreen extends AbstractContainerScreen<CardCabinetMenu> 
         this.isRendering = false;
 
         this.hoveredSlot = null;
-        for (Slot slot : this.menu.slots) {
-            if (slot.isActive() && this.isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY)) {
+        int cardSlotsCount = Math.min(CardCabinetMenu.SLOTS_PER_PAGE, this.menu.slots.size());
+        for (int i = 0; i < cardSlotsCount; i++) {
+            Slot slot = this.menu.slots.get(i);
+            if (slot.isActive() && this.isHovering(slot.x - CARD_OFFSET_X, slot.y - CARD_OFFSET_Y, CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, mouseX, mouseY)) {
                 this.hoveredSlot = slot;
                 break;
             }
         }
+        if (this.hoveredSlot == null) {
+            for (int i = CardCabinetMenu.SLOTS_PER_PAGE; i < this.menu.slots.size(); i++) {
+                Slot slot = this.menu.slots.get(i);
+                if (slot.isActive() && this.isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY)) {
+                    this.hoveredSlot = slot;
+                    break;
+                }
+            }
+        }
 
-        if (this.hoveredSlot != null && this.hoveredSlot.index < this.menu.getMaxPages() * CardCabinetMenu.SLOTS_PER_PAGE) {
+        if (this.hoveredSlot != null && this.hoveredSlot.index < CardCabinetMenu.SLOTS_PER_PAGE) {
             int x = this.leftPos + this.hoveredSlot.x - CARD_OFFSET_X;
             int y = this.topPos + this.hoveredSlot.y - CARD_OFFSET_Y;
             graphics.fill(x, y, x + CARD_SLOT_WIDTH, y + CARD_SLOT_HEIGHT, -2130706433);
+        } else if (this.hoveredSlot != null) {
+            int x = this.leftPos + this.hoveredSlot.x;
+            int y = this.topPos + this.hoveredSlot.y;
+            graphics.fill(x, y, x + 16, y + 16, -2130706433);
         }
 
         this.renderTooltip(graphics, mouseX, mouseY);
@@ -213,9 +228,10 @@ public class CardCabinetScreen extends AbstractContainerScreen<CardCabinetMenu> 
     protected boolean isHovering(int x, int y, int width, int height, double mouseX, double mouseY) {
         if (this.isRendering) return false;
         if (width == 16 && height == 16) {
-            for (Slot slot : this.menu.slots) {
-                if (slot.isActive() && slot.x == x && slot.y == y
-                        && slot.index < this.menu.getMaxPages() * CardCabinetMenu.SLOTS_PER_PAGE) {
+            int cardSlotsCount = Math.min(CardCabinetMenu.SLOTS_PER_PAGE, this.menu.slots.size());
+            for (int i = 0; i < cardSlotsCount; i++) {
+                Slot slot = this.menu.slots.get(i);
+                if (slot.x == x && slot.y == y) {
                     return super.isHovering(x - CARD_OFFSET_X, y - CARD_OFFSET_Y,
                             CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, mouseX, mouseY);
                 }
@@ -235,7 +251,7 @@ public class CardCabinetScreen extends AbstractContainerScreen<CardCabinetMenu> 
     protected void renderSlot(GuiGraphics graphics, Slot slot) {
         if (!slot.isActive()) return;
 
-        if (slot.index < this.menu.getMaxPages() * CardCabinetMenu.SLOTS_PER_PAGE) {
+        if (slot.index < CardCabinetMenu.SLOTS_PER_PAGE) {
             ItemStack stack = slot.getItem();
             if (!stack.isEmpty()) {
                 String searchTerm = searchBox.getValue().toLowerCase();

@@ -155,8 +155,12 @@ public class CardCabinetBlockEntity extends BlockEntity implements ImplementedIn
     public void setChanged() {
         super.setChanged();
         if (level != null && !level.isClientSide()) {
-            // Recompute fill level (0-7) and update block state texture
-            int newFillLevel = computeFillLevel();
+            // Single pass over the inventory to compute fill level (0-7) and full-cabinet check.
+            int count = 0;
+            for (ItemStack stack : inventory) {
+                if (!stack.isEmpty()) count++;
+            }
+            int newFillLevel = count == 0 ? 0 : Math.min(7, 1 + (count - 1) * 7 / inventory.size());
             BlockState currentState = getBlockState();
             if (currentState.getValue(CardCabinetBlock.FILL_LEVEL) != newFillLevel) {
                 level.setBlock(getBlockPos(),
@@ -166,10 +170,6 @@ public class CardCabinetBlockEntity extends BlockEntity implements ImplementedIn
             level.updateNeighbourForOutputSignal(getBlockPos(), getBlockState().getBlock());
 
             // Check if cabinet is completely full (12,000 cards)
-            int count = 0;
-            for (ItemStack stack : inventory) {
-                if (!stack.isEmpty()) count++;
-            }
             if (count == inventory.size()) {
                 for (Player player : level.players()) {
                     if (player instanceof ServerPlayer serverPlayer && serverPlayer.containerMenu instanceof CardCabinetMenu cabinetMenu) {
@@ -180,20 +180,6 @@ public class CardCabinetBlockEntity extends BlockEntity implements ImplementedIn
                 }
             }
         }
-    }
-
-    /**
-     * Returns the fill level 0-7 based on how many card slots are occupied.
-     * 0 = empty, 1 = a few cards, 7 = nearly or completely full.
-     */
-    private int computeFillLevel() {
-        int count = 0;
-        for (ItemStack stack : inventory) {
-            if (!stack.isEmpty()) count++;
-        }
-        if (count == 0) return 0;
-        // Map 1..12000 → 1..7 (ceiling division into 7 equal buckets)
-        return Math.min(7, 1 + (count - 1) * 7 / inventory.size());
     }
 
     @Override

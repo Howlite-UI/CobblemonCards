@@ -113,14 +113,14 @@ public class BinderMenu extends AbstractContainerMenu {
             this.binderContainer.setItem(i, savedItems.get(i));
         }
 
-        for (int p = 0; p < tier.getPages(); p++) {
-            for (int row = 0; row < 3; ++row) {
-                for (int col = 0; col < 4; ++col) {
-                    int index = col + row * 4 + p * SLOTS_PER_PAGE;
-                    int xPos = 46 + col * 50;
-                    int yPos = 35 + row * 65;
-                    this.addSlot(new CardSlot(this.binderContainer, index, xPos, yPos, p, this));
-                }
+        // Only register the 12 visible slots for the active page (48 slots total with player inventory)
+        // instead of up to 12,000 slots — eliminates server tick lag in broadcastChanges() and client render lag.
+        for (int row = 0; row < 3; ++row) {
+            for (int col = 0; col < 4; ++col) {
+                int localIndex = col + row * 4;
+                int xPos = 46 + col * 50;
+                int yPos = 35 + row * 65;
+                this.addSlot(new PagedCardSlot(this.binderContainer, localIndex, xPos, yPos, this));
             }
         }
 
@@ -138,9 +138,14 @@ public class BinderMenu extends AbstractContainerMenu {
         }
     }
 
+    public Container getContainer() {
+        return this.binderContainer;
+    }
+
     public void setPage(int page) {
         if (page >= 0 && page < tier.getPages()) {
             this.currentPage = page;
+            this.broadcastChanges();
         }
     }
     
@@ -188,6 +193,7 @@ public class BinderMenu extends AbstractContainerMenu {
         for (int i = 0; i < cards.size() && i < totalSlots; i++) {
             this.binderContainer.setItem(i, cards.get(i));
         }
+        this.broadcastChanges();
     }
 
     public int getCurrentPage() { return currentPage; }
@@ -218,20 +224,34 @@ public class BinderMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        int totalBinderSlots = tier.getMaxSlots(SLOTS_PER_PAGE);
         ItemStack newStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
         if (slot != null && slot.hasItem()) {
             ItemStack originalStack = slot.getItem();
             newStack = originalStack.copy();
 
-            if (index < totalBinderSlots) {
-                if (!this.moveItemStackTo(originalStack, totalBinderSlots, this.slots.size(), true)) {
+            if (index < SLOTS_PER_PAGE) {
+                if (!this.moveItemStackTo(originalStack, SLOTS_PER_PAGE, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
             } else {
                 if (originalStack.getItem() instanceof CardItem) {
-                    if (!this.moveItemStackTo(originalStack, 0, totalBinderSlots, false)) {
+                    // Try current page first, then fall back to any empty slot in the binder.
+                    boolean moved = this.moveItemStackTo(originalStack, 0, SLOTS_PER_PAGE, false);
+                    if (!originalStack.isEmpty()) {
+                        int totalBinderSlots = tier.getMaxSlots(SLOTS_PER_PAGE);
+                        for (int i = 0; i < totalBinderSlots && !originalStack.isEmpty(); i++) {
+                            if (this.binderContainer.getItem(i).isEmpty()) {
+                                int maxCount = Math.min(this.binderContainer.getMaxStackSize(), originalStack.getMaxStackSize());
+                                this.binderContainer.setItem(i, originalStack.split(Math.min(originalStack.getCount(), maxCount)));
+                                moved = true;
+                            }
+                        }
+                        if (moved) {
+                            this.binderContainer.setChanged();
+                        }
+                    }
+                    if (!moved) {
                         return ItemStack.EMPTY;
                     }
                 } else {
@@ -253,24 +273,44 @@ public class BinderMenu extends AbstractContainerMenu {
         return !binderStack.isEmpty() && binderStack.getItem() instanceof BinderItem;
     }
 
-    private static class CardSlot extends Slot {
-        private final int page;
+    private static class PagedCardSlot extends Slot {
+        private final int localIndex;
         private final BinderMenu menu;
 
-        public CardSlot(Container container, int index, int x, int y, int page, BinderMenu menu) {
-            super(container, index, x, y);
-            this.page = page;
+        public PagedCardSlot(Container container, int localIndex, int x, int y, BinderMenu menu) {
+            super(container, localIndex, x, y);
+            this.localIndex = localIndex;
             this.menu = menu;
+        }
+
+        private int getBackingIndex() {
+            return this.menu.getCurrentPage() * SLOTS_PER_PAGE + this.localIndex;
+        }
+
+        @Override
+        public ItemStack getItem() {
+            int idx = getBackingIndex();
+            return idx < this.container.getContainerSize() ? this.container.getItem(idx) : ItemStack.EMPTY;
+        }
+
+        @Override
+        public void set(ItemStack stack) {
+            int idx = getBackingIndex();
+            if (idx < this.container.getContainerSize()) {
+                this.container.setItem(idx, stack);
+                this.setChanged();
+            }
+        }
+
+        @Override
+        public ItemStack remove(int amount) {
+            int idx = getBackingIndex();
+            return idx < this.container.getContainerSize() ? this.container.removeItem(idx, amount) : ItemStack.EMPTY;
         }
 
         @Override
         public boolean mayPlace(ItemStack stack) {
             return stack.getItem() instanceof CardItem;
-        }
-
-        @Override
-        public boolean isActive() {
-            return this.menu.getCurrentPage() == this.page;
         }
     }
 

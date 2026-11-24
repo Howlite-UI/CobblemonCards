@@ -356,6 +356,7 @@
   "cobblemon-cards.midnightconfig.enableNetheriteBinder": "Enable Netherite Binder",
   "cobblemon-cards.midnightconfig.enableMasterAlbum": "Enable Master Album",
   "cobblemon-cards.midnightconfig.masterAlbumGivesStats": "Master Album Gives Stats",
+  "cobblemon-cards.midnightconfig.keepBinderOnDeath": "Keep Equipped Binder On Death",
   "cobblemon-cards.midnightconfig.leatherBinderPages": "Leather Binder Pages",
   "cobblemon-cards.midnightconfig.ironBinderPages": "Iron Binder Pages",
   "cobblemon-cards.midnightconfig.goldBinderPages": "Gold Binder Pages",

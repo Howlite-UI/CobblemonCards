@@ -221,7 +221,14 @@ public class BoosterLootTable {
         java.util.Set<String> mega = java.util.Set.of("venusaur", "charizard", "blastoise", "alakazam", "gengar", "kangaskhan", "pinsir", "gyarados", "aerodactyl", "mewtwo", "ampharos", "scizor", "heracross", "tyranitar", "blaziken", "gardevoir", "mawile", "aggron", "medicham", "manectric", "banette", "absol", "garchomp", "lucario", "abomasnow", "beedrill", "pidgeot", "steelix", "sceptile", "swampert", "sableye", "sharpedo", "camerupt", "altaria", "glalie", "salamence", "metagross", "latias", "latios", "rayquaza", "lopunny", "gallade", "audino", "diancie");
 
         String pIdLower = basePokemonId.toLowerCase();
-        if (mega.contains(pIdLower) && (rarity.equals("rare") || rarity.equals("epic") || rarity.equals("legendary") || rarity.equals("mythic")) && RANDOM.nextFloat() < 0.16f) {
+        if (pIdLower.equals("unown")) {
+            String[] unownForms = {
+                "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+                "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+                "exclamation", "question"
+            };
+            pokemonId = "unown_" + unownForms[RANDOM.nextInt(unownForms.length)];
+        } else if (mega.contains(pIdLower) && (rarity.equals("rare") || rarity.equals("epic") || rarity.equals("legendary") || rarity.equals("mythic")) && RANDOM.nextFloat() < 0.16f) {
             isMega = true;
             if (pIdLower.equals("charizard") || pIdLower.equals("mewtwo")) {
                 pokemonId = pIdLower + (RANDOM.nextBoolean() ? "_mega_x" : "_mega_y");

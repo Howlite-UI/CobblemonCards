@@ -234,6 +234,9 @@ public class CobblemonCardsConfig extends MidnightConfig {
     @Entry(category = "binders")
     public static boolean masterAlbumGivesStats = false;
 
+    @Entry(category = "binders")
+    public static boolean keepBinderOnDeath = true;
+
     @Comment(centered = true, category = "binders")
     public static String binderCapacity;
 

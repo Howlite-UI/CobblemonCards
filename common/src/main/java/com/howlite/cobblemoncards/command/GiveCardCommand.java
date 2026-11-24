@@ -595,6 +595,8 @@ public class GiveCardCommand {
 
     private static String getBaseSpeciesName(String name) {
         String lower = name.toLowerCase();
+        if (lower.startsWith("unown_") || lower.startsWith("unown-"))
+            return "unown";
         if (lower.startsWith("eternamax_"))
             return "eternatus";
         if (lower.endsWith("_rapidstrike_gmax"))

@@ -349,6 +349,7 @@
   "cobblemon-cards.midnightconfig.enableNetheriteBinder": "Activer Classeur Netherite",
   "cobblemon-cards.midnightconfig.enableMasterAlbum": "Activer Album Master",
   "cobblemon-cards.midnightconfig.masterAlbumGivesStats": "L'Album Master donne des stats",
+  "cobblemon-cards.midnightconfig.keepBinderOnDeath": "Garder le classeur équipé à la mort",
   "cobblemon-cards.midnightconfig.leatherBinderPages": "Pages Classeur Cuir",
   "cobblemon-cards.midnightconfig.ironBinderPages": "Pages Classeur Fer",
   "cobblemon-cards.midnightconfig.goldBinderPages": "Pages Classeur Or",
