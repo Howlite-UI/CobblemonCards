@@ -34,10 +34,44 @@ public class ProceduralTextureCache {
     public static final int WIDTH  = 40;
     public static final int HEIGHT = 30;
 
-    private record Entry(DynamicTexture texture, ResourceLocation location) {}
+    /** Intervalle minimum (ms) entre deux recalculs CPU d'un même effet (~30 FPS). */
+    private static final long UPDATE_INTERVAL_MS = 33L;
+
+    private static final class Entry {
+        final DynamicTexture texture;
+        final ResourceLocation location;
+        long lastUpdateBucket = -1L;
+
+        Entry(DynamicTexture texture, ResourceLocation location) {
+            this.texture = texture;
+            this.location = location;
+        }
+    }
 
     private static final Map<String, Entry> bgCache     = new HashMap<>();
     private static final Map<String, Entry> effectCache = new HashMap<>();
+
+    public static long currentBucket() {
+        return System.currentTimeMillis() / UPDATE_INTERVAL_MS;
+    }
+
+    /**
+     * Retourne la ResourceLocation déjà calculée pour ce bucket temporel si elle est encore fraîche,
+     * sinon {@code null} (l'appelant doit alors recalculer les pixels et appeler {@link #getBgTexture}).
+     */
+    public static ResourceLocation getFreshBgTexture(String name, long bucket) {
+        Entry entry = bgCache.get(name);
+        return (entry != null && entry.lastUpdateBucket == bucket) ? entry.location : null;
+    }
+
+    /**
+     * Retourne la ResourceLocation déjà calculée pour ce bucket temporel si elle est encore fraîche,
+     * sinon {@code null} (l'appelant doit alors recalculer les pixels et appeler {@link #getEffectTexture}).
+     */
+    public static ResourceLocation getFreshEffectTexture(String name, long bucket) {
+        Entry entry = effectCache.get(name);
+        return (entry != null && entry.lastUpdateBucket == bucket) ? entry.location : null;
+    }
 
     /**
      * Retourne la ResourceLocation d'une DynamicTexture pour un background procédural.
@@ -48,7 +82,11 @@ public class ProceduralTextureCache {
      *                    indexé par (row * WIDTH + col), row=0 en haut de l'image
      */
     public static ResourceLocation getBgTexture(String name, int[] pixelColors) {
-        return getOrCreate(bgCache, "cobblemon_bg_", name, pixelColors);
+        return getOrCreate(bgCache, "cobblemon_bg_", name, pixelColors, currentBucket());
+    }
+
+    public static ResourceLocation getBgTexture(String name, int[] pixelColors, long bucket) {
+        return getOrCreate(bgCache, "cobblemon_bg_", name, pixelColors, bucket);
     }
 
     /**
@@ -56,12 +94,16 @@ public class ProceduralTextureCache {
      * Les pixels à alpha=0 restent transparents → laissent voir le Pokémon en dessous.
      */
     public static ResourceLocation getEffectTexture(String name, int[] pixelColors) {
-        return getOrCreate(effectCache, "cobblemon_fx_", name, pixelColors);
+        return getOrCreate(effectCache, "cobblemon_fx_", name, pixelColors, currentBucket());
+    }
+
+    public static ResourceLocation getEffectTexture(String name, int[] pixelColors, long bucket) {
+        return getOrCreate(effectCache, "cobblemon_fx_", name, pixelColors, bucket);
     }
 
     private static ResourceLocation getOrCreate(Map<String, Entry> cache,
                                                  String prefix, String name,
-                                                 int[] pixels) {
+                                                 int[] pixels, long bucket) {
         Entry entry = cache.get(name);
         if (entry == null) {
             // Première utilisation : créer la NativeImage + DynamicTexture + enregistrer
@@ -78,16 +120,19 @@ public class ProceduralTextureCache {
             cache.put(name, entry);
         }
 
-        // Mettre à jour les pixels et uploader au GPU
-        NativeImage img = entry.texture().getPixels();
-        if (img != null) {
-            for (int i = 0; i < pixels.length && i < WIDTH * HEIGHT; i++) {
-                img.setPixelRGBA(i % WIDTH, i / WIDTH, pixels[i]);
+        // Mettre à jour les pixels et uploader au GPU uniquement si le bucket a avancé
+        if (entry.lastUpdateBucket != bucket) {
+            NativeImage img = entry.texture.getPixels();
+            if (img != null) {
+                for (int i = 0; i < pixels.length && i < WIDTH * HEIGHT; i++) {
+                    img.setPixelRGBA(i % WIDTH, i / WIDTH, pixels[i]);
+                }
+                entry.texture.upload();
             }
-            entry.texture().upload();
+            entry.lastUpdateBucket = bucket;
         }
 
-        return entry.location();
+        return entry.location;
     }
 
     /**

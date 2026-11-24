@@ -30,6 +30,8 @@ public class CardItemRenderer {
 
     private static final ConcurrentHashMap<String, GameProfile> PLAYER_PROFILE_CACHE = new ConcurrentHashMap<>();
     private static final Set<String> PLAYER_PROFILE_PENDING = ConcurrentHashMap.newKeySet();
+    private static final ConcurrentHashMap<String, ResourceLocation> POKEMON_TEXTURE_CACHE = new ConcurrentHashMap<>();
+    private static volatile net.minecraft.server.packs.resources.ResourceManager cachedResourceManager = null;
 
     private static final ResourceLocation TEXTURE_STARS = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/effect/foil_stars.png");
     private static final ResourceLocation TEXTURE_GLINT = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/effect/glint.png");
@@ -105,148 +107,8 @@ public class CardItemRenderer {
         
         if (isPlayer) {
             // Player skin textures are resolved dynamically
-        } else if (resolvedPokemonId.equalsIgnoreCase("missingno")) {
-            pokemonTex = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/missingno.png");
-        } else if (resolvedPokemonId.equalsIgnoreCase("you_and_mew")) {
-            pokemonTex = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/you_and_mew.png");
-        } else if (resolvedPokemonId.equalsIgnoreCase("ghost")) {
-            pokemonTex = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/ghost.png");
-        } else if (resolvedPokemonId.equalsIgnoreCase("god_bidoof")) {
-            pokemonTex = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/god_bidoof.png");
-        } else if (resolvedPokemonId.equalsIgnoreCase("crystal_onix")) {
-            pokemonTex = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/crystal_onix.png");
-        } else if (resolvedPokemonId.equalsIgnoreCase("shadow_lugia")) {
-            pokemonTex = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/shadow_lugia.png");
-        } else if (resolvedPokemonId.equalsIgnoreCase("pride_sylveon")) {
-            pokemonTex = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/pride_sylveon.png");
         } else {
-            String folder = data.isShiny() ? "shiny" : "regular";
-            String sanitizedName = sanitizeStandardPath(resolvedPokemonId);
-            ResourceLocation primaryTex = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/" + folder + "/" + sanitizedName + ".png");
-            
-            // Si manquant, essayer en remplaçant les tirets bas par des tirets (Mega/Régionaux en dossier regular/shiny)
-            if (!Minecraft.getInstance().getResourceManager().getResource(primaryTex).isPresent()) {
-                String dashed = sanitizedName.replace("_", "-");
-                ResourceLocation dashedTex = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/" + folder + "/" + dashed + ".png");
-                if (Minecraft.getInstance().getResourceManager().getResource(dashedTex).isPresent()) {
-                    pokemonTex = dashedTex;
-                } else {
-                    pokemonTex = primaryTex;
-                }
-            } else {
-                pokemonTex = primaryTex;
-            }
-        }
-
-        if (!isPlayer && Minecraft.getInstance().getResourceManager() != null) {
-            // Si le sprite 40x30 par défaut est manquant, on cherche dans le dossier entity_icon (Gen 1-9, format 68x56)
-            if (!Minecraft.getInstance().getResourceManager().getResource(pokemonTex).isPresent()) {
-                String baseSpecies = getBaseSpeciesName(resolvedPokemonId);
-                Species species = com.howlite.cobblemoncards.util.CardUtil.getSpecies(baseSpecies);
-                if (species != null) {
-                    String cleanName = sanitizeEntityIconPath(species.getName());
-                    String dexString = String.format("%04d", species.getNationalPokedexNumber());
-                    String entityFolderName = dexString + "_" + cleanName;
-                    
-                    ResourceLocation resolvedTex = null;
-                    
-                    // A. Essayer d'abord la texture exacte de la variante (ex: vulpix_alolan.png)
-                    String vName = resolvedPokemonId.toLowerCase();
-                    String[] variantFiles = {
-                        vName + (data.isShiny() ? "_shiny" : ""),
-                        vName.replace("-", "_") + (data.isShiny() ? "_shiny" : ""),
-                        vName.replace("_", "-") + (data.isShiny() ? "_shiny" : "")
-                    };
-                    
-                    for (String vf : variantFiles) {
-                        String cleanVf = sanitizeStandardPath(vf) + ".png";
-                        ResourceLocation vTex = ResourceLocation.fromNamespaceAndPath(
-                            "cobblemon-cards",
-                            "textures/item/cards/pokemon/entity_icon/" + entityFolderName + "/" + cleanVf
-                        );
-                        if (Minecraft.getInstance().getResourceManager().getResource(vTex).isPresent()) {
-                            resolvedTex = vTex;
-                            break;
-                        }
-                    }
-                    
-                    if (resolvedTex == null) {
-                        // B. Essayer le fichier standard avec le nom remappé
-                        String remappedName = getRemappedEntityName(cleanName);
-                        String standardFileName = remappedName + (data.isShiny() ? "_shiny.png" : ".png");
-                        ResourceLocation standardTex = ResourceLocation.fromNamespaceAndPath(
-                            "cobblemon-cards", 
-                            "textures/item/cards/pokemon/entity_icon/" + entityFolderName + "/" + standardFileName
-                        );
-                        
-                        if (Minecraft.getInstance().getResourceManager().getResource(standardTex).isPresent()) {
-                            resolvedTex = standardTex;
-                        } else {
-                        // 2. Essayer avec les suffixes courants (genders, formes, segments, ou numéros de sprite)
-                        String[] suffixes = {
-                            "_1", "_male", "_a", "_m", "_female", "_f", "_left", "_right", "_chest", "_roaming", "_zero", "_hero", 
-                            "_solo", "_school", "_amped", "_lowkey", "_curly", "_droopy", "_stretchy", 
-                            "_two_segment", "_three_segment", "_green", "_blue", "_yellow", "_gray", 
-                            "_spring", "_summer", "_autumn", "_winter", "_west", "_east", 
-                            "_redstripe", "_bluestripe", "_whitestripe", "_shadow", 
-                            "_incarnate", "_therian", "_vanilla"
-                        };
-                        
-                        for (String suffix : suffixes) {
-                            if (data.isShiny()) {
-                                // Essayer premier placement : remappedName + suffix + "_shiny.png" (ex: gimmighoul_chest_shiny.png)
-                                String f1 = remappedName + suffix + "_shiny.png";
-                                ResourceLocation t1 = ResourceLocation.fromNamespaceAndPath(
-                                    "cobblemon-cards", 
-                                    "textures/item/cards/pokemon/entity_icon/" + entityFolderName + "/" + f1
-                                );
-                                if (Minecraft.getInstance().getResourceManager().getResource(t1).isPresent()) {
-                                    resolvedTex = t1;
-                                    break;
-                                }
-                                
-                                // Essayer second placement : remappedName + "_shiny" + suffix + ".png" (ex: ceruledge_shiny_1.png)
-                                String f2 = remappedName + "_shiny" + suffix + ".png";
-                                ResourceLocation t2 = ResourceLocation.fromNamespaceAndPath(
-                                    "cobblemon-cards", 
-                                    "textures/item/cards/pokemon/entity_icon/" + entityFolderName + "/" + f2
-                                );
-                                if (Minecraft.getInstance().getResourceManager().getResource(t2).isPresent()) {
-                                    resolvedTex = t2;
-                                    break;
-                                }
-                            } else {
-                                String f = remappedName + suffix + ".png";
-                                ResourceLocation t = ResourceLocation.fromNamespaceAndPath(
-                                    "cobblemon-cards", 
-                                    "textures/item/cards/pokemon/entity_icon/" + entityFolderName + "/" + f
-                                );
-                                if (Minecraft.getInstance().getResourceManager().getResource(t).isPresent()) {
-                                    resolvedTex = t;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    }
-                    
-                    if (resolvedTex != null) {
-                        pokemonTex = resolvedTex;
-                        // entity_icon textures are 40x30 (padded to 48x32 for mipmap).
-                        // Use 40x30 ratio so the quad matches the content ratio exactly (no horizontal squish).
-                        imageWidth = 40.0f;
-                        imageHeight = 30.0f;
-                    }
-                }
-            }
-            
-            // Si toujours manquant après recherche, fallback sur substitute.png ou substitute_shiny.png (40x30)
-            if (!Minecraft.getInstance().getResourceManager().getResource(pokemonTex).isPresent()) {
-                String fallbackName = data.isShiny() ? "substitute_shiny.png" : "substitute.png";
-                pokemonTex = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/entity_icon/" + fallbackName);
-                imageWidth = 40.0f;
-                imageHeight = 30.0f;
-            }
+            pokemonTex = resolvePokemonTexture(resolvedPokemonId, data.isShiny());
         }
 
         float pokeHeight = 6.0f / 16.0f;
@@ -402,6 +264,12 @@ public class CardItemRenderer {
     
     private static void renderProceduralBackground(PoseStack matrices, MultiBufferSource vertexConsumers, String bgType, int light, int overlay, float w, float h) {
         Matrix4f matrix = matrices.last().pose();
+        long bucket = ProceduralTextureCache.currentBucket();
+        ResourceLocation cachedTex = ProceduralTextureCache.getFreshBgTexture(bgType, bucket);
+        if (cachedTex != null) {
+            renderQuad(matrix, vertexConsumers.getBuffer(RenderType.entityCutout(cachedTex)), light, overlay, w, h);
+            return;
+        }
 
         float time = (System.currentTimeMillis() % 10000) / 1000.0f;
         
@@ -1640,7 +1508,7 @@ public class CardItemRenderer {
 
         // Upload la DynamicTexture et rendu d'un seul quad opaque
         // entityCutout = même render type que les backgrounds statiques PNG → 100% compatible Iris
-        net.minecraft.resources.ResourceLocation bgTex = ProceduralTextureCache.getBgTexture(bgType, bgPixels);
+        net.minecraft.resources.ResourceLocation bgTex = ProceduralTextureCache.getBgTexture(bgType, bgPixels, bucket);
         renderQuad(matrix, vertexConsumers.getBuffer(RenderType.entityCutout(bgTex)), light, overlay, w, h);
     }
     
@@ -1661,6 +1529,12 @@ public class CardItemRenderer {
     
     private static void renderProceduralEffect(PoseStack matrices, MultiBufferSource vertexConsumers, String effectType, int light, int overlay, float w, float h) {
         Matrix4f matrix = matrices.last().pose();
+        long bucket = ProceduralTextureCache.currentBucket();
+        ResourceLocation cachedTex = ProceduralTextureCache.getFreshEffectTexture(effectType, bucket);
+        if (cachedTex != null) {
+            renderQuad(matrix, vertexConsumers.getBuffer(RenderType.entityTranslucent(cachedTex)), light, overlay, w, h);
+            return;
+        }
 
         float time = (System.currentTimeMillis() % 10000) / 1000.0f;
         
@@ -2815,7 +2689,7 @@ public class CardItemRenderer {
 
         // Upload la DynamicTexture et rendu d'un seul quad semi-transparent
         // entityTranslucent = même render type que foil_stars, glint, etc. → compatible Iris
-        net.minecraft.resources.ResourceLocation fxTex = ProceduralTextureCache.getEffectTexture(effectType, fxPixels);
+        net.minecraft.resources.ResourceLocation fxTex = ProceduralTextureCache.getEffectTexture(effectType, fxPixels, bucket);
         renderQuad(matrix, vertexConsumers.getBuffer(RenderType.entityTranslucent(fxTex)), light, overlay, w, h);
     }
 
@@ -2944,6 +2818,122 @@ public class CardItemRenderer {
         consumer.addVertex(matrix,  hw, -hh, 0).setColor(r, g, b, a).setUv(u1, v1).setOverlay(overlay).setLight(light).setNormal(0, 0, 1);
         consumer.addVertex(matrix,  hw,  hh, 0).setColor(r, g, b, a).setUv(u1, v0).setOverlay(overlay).setLight(light).setNormal(0, 0, 1);
         consumer.addVertex(matrix, -hw,  hh, 0).setColor(r, g, b, a).setUv(u0, v0).setOverlay(overlay).setLight(light).setNormal(0, 0, 1);
+    }
+
+    private static ResourceLocation resolvePokemonTexture(String resolvedPokemonId, boolean isShiny) {
+        net.minecraft.server.packs.resources.ResourceManager rm = Minecraft.getInstance().getResourceManager();
+        if (rm != cachedResourceManager) {
+            POKEMON_TEXTURE_CACHE.clear();
+            cachedResourceManager = rm;
+        }
+        String cacheKey = resolvedPokemonId.toLowerCase() + (isShiny ? "|1" : "|0");
+        return POKEMON_TEXTURE_CACHE.computeIfAbsent(cacheKey, k -> lookupPokemonTexture(rm, resolvedPokemonId, isShiny));
+    }
+
+    private static ResourceLocation lookupPokemonTexture(net.minecraft.server.packs.resources.ResourceManager rm, String resolvedPokemonId, boolean isShiny) {
+        if (resolvedPokemonId.equalsIgnoreCase("missingno")) {
+            return ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/missingno.png");
+        } else if (resolvedPokemonId.equalsIgnoreCase("you_and_mew")) {
+            return ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/you_and_mew.png");
+        } else if (resolvedPokemonId.equalsIgnoreCase("ghost")) {
+            return ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/ghost.png");
+        } else if (resolvedPokemonId.equalsIgnoreCase("god_bidoof")) {
+            return ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/god_bidoof.png");
+        } else if (resolvedPokemonId.equalsIgnoreCase("crystal_onix")) {
+            return ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/crystal_onix.png");
+        } else if (resolvedPokemonId.equalsIgnoreCase("shadow_lugia")) {
+            return ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/shadow_lugia.png");
+        } else if (resolvedPokemonId.equalsIgnoreCase("pride_sylveon")) {
+            return ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/easter_egg/pride_sylveon.png");
+        }
+
+        String folder = isShiny ? "shiny" : "regular";
+        String sanitizedName = sanitizeStandardPath(resolvedPokemonId);
+        ResourceLocation primaryTex = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/" + folder + "/" + sanitizedName + ".png");
+
+        if (rm != null && rm.getResource(primaryTex).isPresent()) {
+            return primaryTex;
+        }
+
+        String dashed = sanitizedName.replace("_", "-");
+        ResourceLocation dashedTex = ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/" + folder + "/" + dashed + ".png");
+        if (rm != null && rm.getResource(dashedTex).isPresent()) {
+            return dashedTex;
+        }
+
+        if (rm != null) {
+            String baseSpecies = getBaseSpeciesName(resolvedPokemonId);
+            Species species = com.howlite.cobblemoncards.util.CardUtil.getSpecies(baseSpecies);
+            if (species != null) {
+                String cleanName = sanitizeEntityIconPath(species.getName());
+                String dexString = String.format("%04d", species.getNationalPokedexNumber());
+                String entityFolderName = dexString + "_" + cleanName;
+
+                // A. Essayer d'abord la texture exacte de la variante (ex: vulpix_alolan.png, unown_a.png)
+                String vName = resolvedPokemonId.toLowerCase();
+                String[] variantFiles = {
+                    vName + (isShiny ? "_shiny" : ""),
+                    vName.replace("-", "_") + (isShiny ? "_shiny" : ""),
+                    vName.replace("_", "-") + (isShiny ? "_shiny" : "")
+                };
+                for (String vf : variantFiles) {
+                    String cleanVf = sanitizeStandardPath(vf) + ".png";
+                    ResourceLocation vTex = ResourceLocation.fromNamespaceAndPath(
+                        "cobblemon-cards",
+                        "textures/item/cards/pokemon/entity_icon/" + entityFolderName + "/" + cleanVf
+                    );
+                    if (rm.getResource(vTex).isPresent()) {
+                        return vTex;
+                    }
+                }
+
+                // B. Essayer le fichier standard avec le nom remappé
+                String remappedName = getRemappedEntityName(cleanName);
+                String standardFileName = remappedName + (isShiny ? "_shiny.png" : ".png");
+                ResourceLocation standardTex = ResourceLocation.fromNamespaceAndPath(
+                    "cobblemon-cards",
+                    "textures/item/cards/pokemon/entity_icon/" + entityFolderName + "/" + standardFileName
+                );
+                if (rm.getResource(standardTex).isPresent()) {
+                    return standardTex;
+                }
+
+                // C. Essayer avec les suffixes courants (genres, formes, segments, ou numéros de sprite)
+                String[] suffixes = {
+                    "_1", "_male", "_a", "_m", "_female", "_f", "_left", "_right", "_chest", "_roaming", "_zero", "_hero",
+                    "_solo", "_school", "_amped", "_lowkey", "_curly", "_droopy", "_stretchy",
+                    "_two_segment", "_three_segment", "_green", "_blue", "_yellow", "_gray",
+                    "_spring", "_summer", "_autumn", "_winter", "_west", "_east",
+                    "_redstripe", "_bluestripe", "_whitestripe", "_shadow",
+                    "_incarnate", "_therian", "_vanilla"
+                };
+                for (String suffix : suffixes) {
+                    if (isShiny) {
+                        ResourceLocation t1 = ResourceLocation.fromNamespaceAndPath(
+                            "cobblemon-cards",
+                            "textures/item/cards/pokemon/entity_icon/" + entityFolderName + "/" + remappedName + suffix + "_shiny.png"
+                        );
+                        if (rm.getResource(t1).isPresent()) return t1;
+
+                        ResourceLocation t2 = ResourceLocation.fromNamespaceAndPath(
+                            "cobblemon-cards",
+                            "textures/item/cards/pokemon/entity_icon/" + entityFolderName + "/" + remappedName + "_shiny" + suffix + ".png"
+                        );
+                        if (rm.getResource(t2).isPresent()) return t2;
+                    } else {
+                        ResourceLocation t = ResourceLocation.fromNamespaceAndPath(
+                            "cobblemon-cards",
+                            "textures/item/cards/pokemon/entity_icon/" + entityFolderName + "/" + remappedName + suffix + ".png"
+                        );
+                        if (rm.getResource(t).isPresent()) return t;
+                    }
+                }
+            }
+        }
+
+        // Fallback sur substitute.png ou substitute_shiny.png (40x30)
+        String fallbackName = isShiny ? "substitute_shiny.png" : "substitute.png";
+        return ResourceLocation.fromNamespaceAndPath("cobblemon-cards", "textures/item/cards/pokemon/entity_icon/" + fallbackName);
     }
 
     private static ResourceLocation resolvePlayerSkin(UUID uuid, String name) {
