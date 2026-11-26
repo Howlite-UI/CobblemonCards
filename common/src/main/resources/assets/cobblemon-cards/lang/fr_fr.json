@@ -77,6 +77,7 @@
   "gui.cobblemon-cards.binder.sort.pokemon": "Pkmn",
   "gui.cobblemon-cards.binder.sort.rarity": "Rareté",
   "gui.cobblemon-cards.binder.sort.grade": "Note",
+  "gui.cobblemon-cards.binder.sort.stat": "Stat",
 
   "stat.cobblemon-cards.mining_speed": "Vitesse de Minage",
   "stat.cobblemon-cards.movement_speed": "Vitesse de Déplacement",

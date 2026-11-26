@@ -101,6 +101,16 @@ public class CardCabinetMenu extends AbstractContainerMenu {
                 case 1 -> d1.pokemonId().compareTo(d2.pokemonId());
                 case 2 -> Integer.compare(getRarityWeight(d2.rarity()), getRarityWeight(d1.rarity()));
                 case 3 -> Integer.compare(d2.grade(), d1.grade());
+                case 4 -> {
+                    boolean c1 = com.howlite.cobblemoncards.util.CardUtil.isCosmeticCard(d1.pokemonId()) || d1.stat() == null;
+                    boolean c2 = com.howlite.cobblemoncards.util.CardUtil.isCosmeticCard(d2.pokemonId()) || d2.stat() == null;
+                    if (c1 && c2) yield d1.pokemonId().compareTo(d2.pokemonId());
+                    if (c1) yield 1;
+                    if (c2) yield -1;
+                    int cmp = d1.stat().getSerializedName().compareTo(d2.stat().getSerializedName());
+                    if (cmp != 0) yield cmp;
+                    yield Float.compare(d2.statValue(), d1.statValue());
+                }
                 default -> 0;
             };
         };

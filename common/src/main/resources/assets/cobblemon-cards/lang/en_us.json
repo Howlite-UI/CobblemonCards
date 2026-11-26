@@ -73,6 +73,7 @@
   "gui.cobblemon-cards.binder.sort.pokemon": "Pkmn",
   "gui.cobblemon-cards.binder.sort.rarity": "Rarity",
   "gui.cobblemon-cards.binder.sort.grade": "Grade",
+  "gui.cobblemon-cards.binder.sort.stat": "Stat",
   "stat.cobblemon-cards.mining_speed": "Mining Speed",
   "stat.cobblemon-cards.movement_speed": "Movement Speed",
   "stat.cobblemon-cards.attack_damage": "Attack Damage",

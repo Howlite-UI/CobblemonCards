@@ -97,19 +97,23 @@ public class BinderScreen extends AbstractContainerScreen<BinderMenu> {
         }
 
         int widgetsY = this.topPos - 18;
-        this.searchBox = new EditBox(this.font, this.leftPos + 46, widgetsY, 80, 12, Component.translatable("gui.cobblemon-cards.binder.search"));
+        this.searchBox = new EditBox(this.font, this.leftPos + 6, widgetsY, 78, 12, Component.translatable("gui.cobblemon-cards.binder.search"));
         this.addRenderableWidget(this.searchBox);
 
         this.addRenderableWidget(Button.builder(Component.translatable("gui.cobblemon-cards.binder.sort.pokemon"), (button) -> {
             PlatformHelper.INSTANCE.sendToServer(new SortBinderPayload(1));
-        }).bounds(this.leftPos + 130, widgetsY, 40, 12).build());
-        
+        }).bounds(this.leftPos + 88, widgetsY, 40, 12).build());
+
         this.addRenderableWidget(Button.builder(Component.translatable("gui.cobblemon-cards.binder.sort.rarity"), (button) -> {
             PlatformHelper.INSTANCE.sendToServer(new SortBinderPayload(2));
-        }).bounds(this.leftPos + 172, widgetsY, 40, 12).build());
+        }).bounds(this.leftPos + 130, widgetsY, 40, 12).build());
 
         this.addRenderableWidget(Button.builder(Component.translatable("gui.cobblemon-cards.binder.sort.grade"), (button) -> {
             PlatformHelper.INSTANCE.sendToServer(new SortBinderPayload(3));
+        }).bounds(this.leftPos + 172, widgetsY, 40, 12).build());
+
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.cobblemon-cards.binder.sort.stat"), (button) -> {
+            PlatformHelper.INSTANCE.sendToServer(new SortBinderPayload(4));
         }).bounds(this.leftPos + 214, widgetsY, 40, 12).build());
 
         updateButtonVisibility();
@@ -326,7 +330,22 @@ public class BinderScreen extends AbstractContainerScreen<BinderMenu> {
                     }
                     Component translatableName = Component.translatable("cobblemon.species." + data.pokemonId());
                     String name = translatableName.getString().toLowerCase();
-                    if (!name.contains(searchTerm) && !data.pokemonId().toLowerCase().contains(searchTerm) && !displayName.toLowerCase().contains(searchTerm)) {
+                    boolean matchesPokemon = name.contains(searchTerm) || data.pokemonId().toLowerCase().contains(searchTerm) || displayName.toLowerCase().contains(searchTerm);
+                    boolean matchesStat = false;
+                    if (!com.howlite.cobblemoncards.util.CardUtil.isCosmeticCard(data.pokemonId())) {
+                        if (data.stat() != null) {
+                            String statName = data.stat().getTranslatedName().getString().toLowerCase();
+                            String statId = data.stat().getSerializedName().toLowerCase();
+                            matchesStat = statName.contains(searchTerm) || statId.contains(searchTerm);
+                        }
+                        if (!matchesStat && data.trainerStat() != null && data.trainerStat().isPresent()) {
+                            CardStat tStat = data.trainerStat().get();
+                            String tStatName = tStat.getTranslatedName().getString().toLowerCase();
+                            String tStatId = tStat.getSerializedName().toLowerCase();
+                            matchesStat = tStatName.contains(searchTerm) || tStatId.contains(searchTerm);
+                        }
+                    }
+                    if (!matchesPokemon && !matchesStat) {
                         matches = false;
                     }
                 }
